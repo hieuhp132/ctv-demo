@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="google-site-verification" content="r6IASotKnUwDVwZ_plhAPPuEh2VIP_tTo_RU72NOHrA" />
+  <!-- Favicon must point to /public asset in production (Render, Vite build) -->
+  <link rel="icon" type="image/png" href="/logo.jfif" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            display: ['Space Grotesk', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono: ['Courier New', 'monospace']
+          },
+          colors: {
+            primary: '#FF465E',
+            accent: '#FFA63D',
+            'text-dark': '#1a1a1a',
+            'text-medium': '#4a4a4a',
+            'text-light': '#6b6b6b',
+            'bg-white': '#ffffff',
+            'bg-light': '#f8f9fa',
+            'bg-gray': '#f5f5f5',
+            'border-light': '#e8e8e8',
+            cyberDark: '#080812',
+            cyberDarker: '#040409',
+            neonCyan: '#00f0ff',
+            neonPurple: '#b026ff',
+            neonGreen: '#00ff66',
+            glassBg: 'rgba(15, 23, 42, 0.65)',
+            glassBorder: 'rgba(0, 240, 255, 0.2)'
+          },
+          boxShadow: {
+            neonCyan: '0 0 20px rgba(0, 240, 255, 0.35)',
+            neonPurple: '0 0 20px rgba(176, 38, 255, 0.35)',
+            neonGreen: '0 0 20px rgba(0, 255, 102, 0.35)',
+            glass: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
+          }
+        }
+      }
+    }
+  </script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+    rel="stylesheet">
+      <!-- FontAwesome for icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <title>Ant-Tech Asia</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
+</html>

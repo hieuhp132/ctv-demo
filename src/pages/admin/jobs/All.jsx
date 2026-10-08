@@ -1,0 +1,667 @@
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import "./All.css";
+import {
+  fetchAllJobs,
+  deleteJobL,
+  fetchSavedJobsL,
+  unsaveJobL,
+  saveJobL,
+  updateJobL,
+  createJobL,
+  
+} from "../../../services/api.js";
+import Section from "../../../components/Section.jsx";
+import Modal from "../../../components/Modal.jsx";
+import Filters from "../../../components/Filters.jsx";
+import { useAuth } from "../../../context/AuthContext";
+import { useTheme } from "../../../context/ThemeContext.jsx";
+import { NavLink, useSearchParams } from "react-router-dom";
+import {
+  BriefcaseBusiness,
+  CircleCheck,
+  CircleX,
+  FileText,
+  Plus,
+  Users,
+} from "lucide-react";
+import {createPDF } from "../../../utils/createPDF.js";
+import Ambient3DObject from "../../../components/Ambient3DObject.jsx";
+import "../../../styles/DashboardMotion.css";
+
+const EMPTY_JOB_FORM = {
+  title: "",
+  company: "",
+  location: "",
+  salary: "",
+  bonus: "",
+  rewardCandidateUSD: "",
+  rewardInterviewUSD: "",
+  vacancies: 0,
+  applicants: 0,
+  deadline: "",
+  status: "Active",
+  pipeline: {
+    reviewing: 0,
+    interviewing: 0,
+    lastActivity: "",
+  },
+  paymentSchedule: [
+    { date: "35 days", amount: "50%" },
+    { date: "65 days", amount: "25%" },
+    { date: "95 days", amount: "25%" },
+  ],
+  keywords: "",
+  jobsdetail: {
+    description: "",
+    requirement: "",
+    benefits: "",
+    other: "",
+  },
+};
+
+const mapJobToForm = (job) => ({
+  title: job.title || "",
+  company: job.company || "",
+  location: job.location || "",
+  salary: job.salary || "",
+  bonus: job.bonus || "",
+  rewardCandidateUSD: job.rewardCandidateUSD ?? "",
+  rewardInterviewUSD: job.rewardInterviewUSD ?? "",
+  vacancies: job.vacancies ?? 0,
+  applicants: job.applicants ?? 0,
+  deadline: job.deadline || "",
+  status: job.status || "Active",
+  pipeline: {
+    reviewing: Number(job.pipeline?.reviewing) || 0,
+    interviewing: Number(job.pipeline?.interviewing) || 0,
+    lastActivity: job.pipeline?.lastActivity || "",
+  },
+  paymentSchedule: Array.isArray(job.paymentSchedule) && job.paymentSchedule.length > 0
+    ? job.paymentSchedule.map((item) => ({ date: item.date || "", amount: item.amount || "" }))
+    : EMPTY_JOB_FORM.paymentSchedule,
+  keywords: Array.isArray(job.keywords)
+    ? job.keywords.join(", ")
+    : job.keywords || "",
+  jobsdetail: {
+    description: job.jobsdetail?.description ?? job.description ?? "",
+    requirement: job.jobsdetail?.requirement ?? job.requirements ?? "",
+    benefits: job.jobsdetail?.benefits ?? job.benefits ?? "",
+    other: job.jobsdetail?.other ?? job.other ?? "",
+  },
+});
+
+export default function All() {
+  const { user } = useAuth();
+  const { theme } = useTheme();
+  const adminId = user?.id || user?.email;
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [jobs, setJobs] = useState([]);
+  const [jobForm, setJobForm] = useState(EMPTY_JOB_FORM);
+  const [editingJob, setEditingJob] = useState(null);
+  const [showJobModal, setShowJobModal] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(false);
+  const [migrationProgress, setMigrationProgress] = useState({ current: 0, total: 0 });
+  const [completedJobs, setCompletedJobs] = useState([]);
+
+
+  const [searchText, setSearchText] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const [filterLocation, setFilterLocation] = useState("");
+  const [filterCompany, setFilterCompany] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+
+  const activePage = parseInt(searchParams.get("page") || "1", 10);
+  const setActivePage = (p) => {
+    const page = typeof p === "function" ? p(activePage) : p;
+    setSearchParams((prev) => {
+      prev.set("page", String(page));
+      return prev;
+    });
+  };
+
+  const [inactivePage, setInactivePage] = useState(1);
+
+  const jobsPerPage = 9;
+
+  /* ================= HANDLERS ================= */
+  const handleSearchChange = (text) => {
+    setSearchText(text);
+    setShowSuggestions(true);
+    if (!text) setActivePage(1); // Reset when cleared
+  };
+
+  const handleSuggestionClick = (text) => {
+    setSearchText(text);
+    setShowSuggestions(false);
+    setActivePage(1);
+  };
+
+  const handleLocationChange = (val) => {
+    setFilterLocation(val);
+    setActivePage(1);
+  };
+
+  const handleCompanyChange = (val) => {
+    setFilterCompany(val);
+    setActivePage(1);
+  };
+
+  const handleCategoryChange = (val) => {
+    setFilterCategory(val);
+    setActivePage(1);
+  };
+
+  /* ================= LOAD ================= */
+  useEffect(() => {
+    const load = async () => {
+      const res = await fetchAllJobs();
+      let list = [...(res.jobs || [])].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+      );
+
+      if (user?.email) {
+        const saved = await fetchSavedJobsL(user.email);
+        const savedIds = new Set(
+          (saved.jobs || []).map((j) => j.jobId || j._id),
+        );
+        list = list.map((j) => ({ ...j, isSaved: savedIds.has(j._id) }));
+      }
+
+      setJobs(list);
+    };
+
+    load();
+  }, [user]);
+
+  /* ================= FILTER ================= */
+  const filteredJobs = useMemo(() => {
+    // If showSuggestions is true, we DON'T apply the new search text to the grid.
+    // The grid should only update when suggestions are closed (meaning a selection was made or cleared).
+    const text = showSuggestions ? "" : searchText.toLowerCase();
+
+    return jobs.filter((j) => {
+      const matchText = !text || [j.title, j.company, j.location, j.keywords]
+        .join(" ")
+        .toLowerCase()
+        .includes(text);
+
+      const matchLocation = !filterLocation || j.location === filterLocation;
+
+      const matchCompany = !filterCompany || j.company === filterCompany;
+
+      const matchCategory =
+        !filterCategory ||
+        (Array.isArray(j.keywords)
+          ? j.keywords.includes(filterCategory)
+          : j.keywords?.includes(filterCategory));
+
+      return matchText && matchLocation && matchCompany && matchCategory;
+    });
+  }, [jobs, searchText, showSuggestions, filterLocation, filterCompany, filterCategory]);
+
+  const searchSuggestions = useMemo(() => {
+    if (!searchText || !showSuggestions) return [];
+    const text = searchText.toLowerCase();
+    
+    // Get unique titles and companies that match
+    const suggestions = new Set();
+    jobs.forEach(j => {
+      if (j.title?.toLowerCase().includes(text)) suggestions.add(j.title);
+      if (j.company?.toLowerCase().includes(text)) suggestions.add(j.company);
+    });
+    
+    return Array.from(suggestions).slice(0, 8);
+  }, [jobs, searchText, showSuggestions]);
+
+  /* ================= ACTIVE / INACTIVE ================= */
+  const today = new Date();
+  const isActive = (j) =>
+    j.status === "Active" && (!j.deadline || today <= new Date(j.deadline));
+
+  const activeJobs = filteredJobs.filter(isActive);
+  const inactiveJobs = filteredJobs.filter((j) => !isActive(j));
+  const allActiveJobs = jobs.filter(isActive);
+  const allInactiveJobs = jobs.length - allActiveJobs.length;
+  const totalApplicants = jobs.reduce((total, job) => {
+    const applicants = Number(job.applicants);
+    return total + (Number.isFinite(applicants) ? applicants : 0);
+  }, 0);
+
+  const paginate = (list, page) =>
+    list.slice((page - 1) * jobsPerPage, page * jobsPerPage);
+
+  /* ================= OPTIONS ================= */
+  const locationOptions = useMemo(
+    () =>
+      [...new Set(jobs.map((j) => j.location).filter(Boolean))].map((loc) => ({
+        value: loc,
+        label: loc,
+      })),
+    [jobs],
+  );
+
+  const companyOptions = useMemo(
+    () =>
+      [...new Set(jobs.map((j) => j.company).filter(Boolean))].map((c) => ({
+        value: c,
+        label: c,
+      })),
+    [jobs],
+  );
+
+  const categoryOptions = useMemo(
+    () =>
+      [
+        ...new Set(
+          jobs
+            .flatMap((j) =>
+              Array.isArray(j.keywords)
+                ? j.keywords
+                : (j.keywords || "").split(","),
+            )
+            .map((k) => k.trim())
+            .filter(Boolean),
+        ),
+      ].map((cat) => ({ value: cat, label: cat })),
+    [jobs],
+  );
+
+  /* ================= ACTIONS ================= */
+  const openAddModal = () => {
+    setEditingJob(null);
+    setJobForm(EMPTY_JOB_FORM);
+    setShowJobModal(true);
+  };
+
+
+  const openEditModal = (job) => {
+    setEditingJob(job);
+    setJobForm(mapJobToForm(job));
+    setShowJobModal(true);
+  };
+
+  const handleSaveToggle = async (job) => {
+    job.isSaved
+      ? await unsaveJobL(job._id, adminId)
+      : await saveJobL(job._id, adminId);
+
+    setJobs((jobs) =>
+      jobs.map((j) => (j._id === job._id ? { ...j, isSaved: !j.isSaved } : j)),
+    );
+  };
+
+  const handleToggleStatus = async (job) => {
+    const newStatus = job.status === "Active" ? "Inactive" : "Active";
+    const lastStatusChangeAt = new Date().toISOString();
+    await updateJobL({ _id: job._id, status: newStatus, lastStatusChangeAt });
+
+    setJobs((jobs) =>
+      jobs.map((j) =>
+        j._id === job._id
+          ? { ...j, status: newStatus, lastStatusChangeAt }
+          : j,
+      ),
+    );
+  };
+
+  const removeJob = async (job) => {
+    if (!window.confirm(`Delete ${job.title}?`)) return;
+    await deleteJobL(job._id);
+    setJobs((jobs) => jobs.filter((j) => j._id !== job._id));
+  };
+
+  const submitJobForm = async (payload) => {
+    setShowJobModal(false);
+
+    if (!editingJob) {
+      const created = await createJobL({
+        title: payload.title,
+        company: payload.company,
+        location: payload.location,
+        salary: payload.salary,
+        bonus: payload.bonus,
+        rewardCandidateUSD: payload.rewardCandidateUSD,
+        rewardInterviewUSD: payload.rewardInterviewUSD,
+        vacancies: payload.vacancies,
+        applicants: payload.applicants,
+        deadline: payload.deadline,
+        status: payload.status,
+        pipeline: payload.pipeline,
+        paymentSchedule: payload.paymentSchedule,
+        keywords: String(payload.keywords || "")
+          .split(",")
+          .map((k) => k.trim())
+          .filter(Boolean),
+        jobsdetail: {
+          description: payload.jobsdetail?.description || "",
+          requirement: payload.jobsdetail?.requirement || "",
+          benefits: payload.jobsdetail?.benefits || "",
+          other: payload.jobsdetail?.other || "",
+        },
+      });
+      setJobs((j) => [created, ...j]);
+      return;
+    }
+
+    const updated = await updateJobL({
+      _id: editingJob._id,
+      title: payload.title,
+      company: payload.company,
+      location: payload.location,
+      salary: payload.salary,
+      bonus: payload.bonus,
+      rewardCandidateUSD: payload.rewardCandidateUSD,
+      rewardInterviewUSD: payload.rewardInterviewUSD,
+      vacancies: payload.vacancies,
+      applicants: payload.applicants,
+      deadline: payload.deadline,
+      status: payload.status,
+      pipeline: payload.pipeline,
+      paymentSchedule: payload.paymentSchedule,
+      keywords: String(payload.keywords || "")
+        .split(",")
+        .map((k) => k.trim())
+        .filter(Boolean),
+      jobsdetail: {
+        description: payload.jobsdetail?.description || "",
+        requirement: payload.jobsdetail?.requirement || "",
+        benefits: payload.jobsdetail?.benefits || "",
+        other: payload.jobsdetail?.other || "",
+      },
+    });
+
+    setJobs((j) => j.map((x) => (x._id === updated._id ? updated : x)));
+
+    setEditingJob(null);
+  };
+
+  const handleSharedJob = (jobId) => {
+    const jobUrl = `${window.location.origin}/job/${jobId}`;
+    navigator.clipboard.writeText(jobUrl);
+    alert("Job link copied to clipboard!");
+  }
+
+  const handleSubmitCandidate = (jobId) => {
+    const candidateUrl = `${window.location.origin}/apply/${jobId}`;
+    navigator.clipboard.writeText(candidateUrl);
+    alert("Candidate application link copied to clipboard!");
+  }
+
+  const selectStyles = {
+    control: (base) => ({
+      ...base,
+      minHeight: 40,
+      borderRadius: 8,
+      fontSize: 14,
+      borderColor: theme === "dark" ? "#354253" : "#d5dde7",
+      backgroundColor: theme === "dark" ? "#171f2a" : "#f8fafc",
+      boxShadow: "none",
+      ":hover": {
+        borderColor: theme === "dark" ? "#00b8c4" : "#008b9a",
+      },
+    }),
+    valueContainer: (base) => ({ ...base, padding: "2px 10px" }),
+    option: (base, state) => ({
+      ...base,
+      padding: "10px 12px",
+      fontSize: 14,
+      backgroundColor: state.isFocused
+        ? theme === "dark" ? "#263445" : "#eaf3f6"
+        : theme === "dark" ? "#171f2a" : "#f8fafc",
+      color: theme === "dark" ? "#e2eaf2" : "#263445",
+      cursor: "pointer",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+      overflow: "hidden",
+      border: `1px solid ${theme === "dark" ? "#354253" : "#d5dde7"}`,
+      backgroundColor: theme === "dark" ? "#171f2a" : "#f8fafc",
+    }),
+    singleValue: (base) => ({
+      ...base,
+      color: theme === "dark" ? "#e2eaf2" : "#263445",
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: theme === "dark" ? "#9aa9ba" : "#64748b",
+    }),
+    input: (base) => ({
+      ...base,
+      color: theme === "dark" ? "#e2eaf2" : "#263445",
+    }),
+    indicatorSeparator: (base) => ({
+      ...base,
+      backgroundColor: theme === "dark" ? "#354253" : "#d5dde7",
+    }),
+    dropdownIndicator: (base) => ({
+      ...base,
+      color: theme === "dark" ? "#9aa9ba" : "#64748b",
+      ":hover": { color: theme === "dark" ? "#52dce4" : "#008b9a" },
+    }),
+    clearIndicator: (base) => ({
+      ...base,
+      color: theme === "dark" ? "#9aa9ba" : "#64748b",
+    }),
+  };
+
+
+  const handleMigrateJDs = async () => {
+    // Only target jobs that have a description but NO jdLink
+    // The check includes jobs where jdLink is undefined, null, or empty string
+    const toFill = jobs.filter((j) => !j.jdLink || j.jdLink === "");
+    
+    if (toFill.length === 0) {
+      alert("All jobs already have a Job Description link.");
+      return;
+    }
+
+    if (!window.confirm(`Found ${toFill.length} jobs without JD links. Start generating them now?`)) {
+      return;
+    }
+
+    setIsMigrating(true);
+    setMigrationProgress({ current: 0, total: toFill.length });
+    setCompletedJobs([]);
+
+    try {
+      // Process each job sequentially to avoid server overload
+      for (let i = 0; i < toFill.length; i++) {
+        const job = toFill[i];
+        setMigrationProgress((prev) => ({ ...prev, current: i + 1 }));
+
+        try {
+          const res = await createPDF({ job });
+          // Fixed: createPDF returns { url: string, name: string }
+          if (res?.url) {
+            const newJdLink = res.url;
+            
+            // 1. Update Server
+            await updateJobL({ _id: job._id, jdLink: newJdLink });
+
+            // 2. Update Local State immediately so the Card UI updates
+            setJobs((prevJobs) =>
+              prevJobs.map((j) =>
+                j._id === job._id ? { ...j, jdLink: newJdLink } : j
+              )
+            );
+
+            // 3. Track completed jobs
+            setCompletedJobs(prev => [...prev, { id: job._id, title: job.title, status: 'success' }]);
+          } else {
+            setCompletedJobs(prev => [...prev, { id: job._id, title: job.title, status: 'failed' }]);
+          }
+        } catch (err) {
+          console.error(`Failed to generate JD for job ${job._id}:`, err);
+          setCompletedJobs(prev => [...prev, { id: job._id, title: job.title, status: 'error' }]);
+        }
+      }
+    } catch (error) {
+      console.error("Migration process error:", error);
+    } finally {
+      // Keep isMigrating true to show final results list
+    }
+  };
+
+  /* ================= RENDER ================= */
+  return (
+    <div className="admin-dashboard">
+      <Ambient3DObject className="ambient-3d-object--admin" />
+      {user.role === "admin" && (
+        <div className="tasks">
+          <NavLink to="/admin-dashboard">Beta</NavLink>
+          <NavLink to="/admin/users">Users List</NavLink>
+        </div>)
+        }
+
+      <section className="jobs-overview" aria-label="Job overview">
+        <article className="jobs-overview-card">
+          <span className="jobs-overview-icon"><BriefcaseBusiness size={19} /></span>
+          <div><span>Total jobs</span><strong>{jobs.length}</strong></div>
+        </article>
+        <article className="jobs-overview-card">
+          <span className="jobs-overview-icon"><CircleCheck size={19} /></span>
+          <div><span>Active jobs</span><strong>{allActiveJobs.length}</strong></div>
+        </article>
+        <article className="jobs-overview-card">
+          <span className="jobs-overview-icon"><CircleX size={19} /></span>
+          <div><span>Inactive jobs</span><strong>{allInactiveJobs}</strong></div>
+        </article>
+        <article className="jobs-overview-card">
+          <span className="jobs-overview-icon"><Users size={19} /></span>
+          <div><span>Total applicants</span><strong>{totalApplicants}</strong></div>
+        </article>
+      </section>
+
+      <Filters
+        searchText={searchText}
+        setSearchText={handleSearchChange}
+        suggestions={searchSuggestions}
+        onSuggestionClick={handleSuggestionClick}
+        filterLocation={filterLocation}
+        setFilterLocation={handleLocationChange}
+        filterCompany={filterCompany}
+        setFilterCompany={handleCompanyChange}
+        filterCategory={filterCategory}
+        setFilterCategory={handleCategoryChange}
+        locationOptions={locationOptions}
+        companyOptions={companyOptions}
+        categoryOptions={categoryOptions}
+        selectStyles={selectStyles}
+      />
+
+      <Section
+        title="ACTIVE JOBS"
+        color="green"
+        count={activeJobs.length}
+        actions={[
+          <button
+            className="section-action-button section-action-button--add"
+            key="add"
+            onClick={openAddModal}
+            type="button"
+          >
+            <Plus size={17} aria-hidden="true" />
+            <span>Add Job</span>
+          </button>,
+          user?.role === "admin" && (
+            <button
+              className="section-action-button section-action-button--generate"
+              key="migrate"
+              onClick={handleMigrateJDs}
+              disabled={isMigrating}
+              title="Generate job descriptions for jobs that do not have one"
+              type="button"
+            >
+              <FileText size={16} aria-hidden="true" />
+              <span>{isMigrating ? "Generating descriptions..." : "Generate Job Descriptions"}</span>
+            </button>
+          ),
+        ].filter(Boolean)}
+        jobs={paginate(activeJobs, activePage)}
+        page={activePage}
+        totalPages={Math.ceil(activeJobs.length / jobsPerPage)}
+        onPrev={() => setActivePage((p) => Math.max(1, p - 1))}
+        onNext={() => setActivePage((p) => p + 1)}
+        gridProps={{
+          onEdit: openEditModal,
+          onDelete: removeJob,
+          onSaveToggle: handleSaveToggle,
+          onToggleStatus: handleToggleStatus,
+          onSharedJob: handleSharedJob,
+          onSubmitCandidate: handleSubmitCandidate,
+        }}
+        role={user?.role}
+      />
+
+      <Section
+        title="INACTIVE JOBS"
+        color="red"
+        count={inactiveJobs.length}
+        jobs={paginate(inactiveJobs, inactivePage)}
+        page={inactivePage}
+        totalPages={Math.ceil(inactiveJobs.length / jobsPerPage)}
+        onPrev={() => setInactivePage((p) => Math.max(1, p - 1))}
+        onNext={() => setInactivePage((p) => p + 1)}
+        gridProps={{
+          onEdit: openEditModal,
+          onDelete: removeJob,
+          onSaveToggle: handleSaveToggle,
+          onToggleStatus: handleToggleStatus,
+          onSharedJob: handleSharedJob,
+          onSubmitCandidate: handleSubmitCandidate,
+        }}
+        role={user?.role}
+      />
+
+
+      <Modal
+        open={showJobModal}
+        editingJob={editingJob}
+        jobForm={jobForm}
+        setJobForm={setJobForm}
+        onSubmit={submitJobForm}
+        onClose={() => setShowJobModal(false)}
+      />
+
+      {isMigrating && (
+        <div className="migration-overlay">
+          <div className="migration-card">
+            <div className="migration-header">
+              <h3>{migrationProgress.current === migrationProgress.total ? "Migration Complete!" : "Generating Job Descriptions..."}</h3>
+              {migrationProgress.current === migrationProgress.total && (
+                <button className="close-migration" onClick={() => setIsMigrating(false)}>×</button>
+              )}
+            </div>
+            
+            <div className="progress-bar-container">
+              <div 
+                className="progress-bar-fill" 
+                style={{ width: `${(migrationProgress.current / migrationProgress.total) * 100}%` }}
+              ></div>
+            </div>
+            
+            <p>Processing job {migrationProgress.current} of {migrationProgress.total}</p>
+            
+            <div className="migration-list">
+              {completedJobs.map((job, idx) => (
+                <div key={job.id + idx} className={`migration-item ${job.status}`}>
+                  <span className="job-title-mini">{job.title}</span>
+                  <span className="job-status-badge">
+                    {job.status === 'success' ? '✓ Success' : '✗ Failed'}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {migrationProgress.current !== migrationProgress.total && (
+              <span className="migration-warning">Please do not close this window.</span>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
