@@ -15,4 +15,13 @@ Use `npm run build` as the build command and `dist` as the publish directory. Th
 - Destination: `/index.html`
 - Action: Rewrite
 
+## Render backend
+
+The API routes are in `server/`. Deploy the latest `main` branch to the Render
+backend service so its `/local/admin/users` endpoints are available. If the
+service uses a repository root directory, set it to `server`, install with
+`npm install`, and start with `node index.js`. Keep the backend's existing
+server-only environment variables configured in Render; do not copy them into
+the static site's `VITE_` variables.
+
 The root `.env.example` documents the frontend variables for local development. Copy it to `.env` and replace the placeholder values; never commit `.env`.

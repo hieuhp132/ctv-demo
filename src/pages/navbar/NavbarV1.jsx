@@ -14,6 +14,7 @@ import {
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useTheme } from "../../context/ThemeContext.jsx";
 import { ROLE_NAV_ITEMS, ROLE_ROUTES } from "../../routes/roleRoutes.js";
+import Notifications from "../../components/Notifications.jsx";
 import "./NavbarV1.css";
 
 const navItems = [
@@ -53,6 +54,7 @@ function getRoleNavIcon(label) {
 export default function NavbarV1() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const accountRef = useRef(null);
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -83,6 +85,15 @@ export default function NavbarV1() {
     };
   }, [accountMenuOpen]);
 
+  useEffect(() => {
+    if (!notificationsOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setNotificationsOpen(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [notificationsOpen]);
+
   const closeMobileMenu = () => setMobileMenuOpen(false);
   const dashboardPath =
     ROLE_ROUTES[user?.role]?.dashboard || ROLE_ROUTES[user?.role]?.jobs || "/";
@@ -100,6 +111,7 @@ export default function NavbarV1() {
   };
 
   return (
+    <>
     <header className={`navbar-v1${user ? " navbar-v1--authenticated" : ""}`}>
       <div className="navbar-v1__inner">
         <a className="navbar-v1__brand" href="/" aria-label="ANT TECH home">
@@ -179,15 +191,16 @@ export default function NavbarV1() {
           {user ? (
             <div className="navbar-v1__account" ref={accountRef}>
               {notificationsPath && (
-                <Link
-                  aria-current={isCurrentRoute(notificationsPath) ? "page" : undefined}
-                  aria-label="Notifications"
-                  className={`navbar-v1__notification-link${isCurrentRoute(notificationsPath) ? " is-active" : ""}`}
-                  title="Notifications"
-                  to={notificationsPath}
+                <button
+                  aria-expanded={notificationsOpen}
+                  aria-label="Open activity feed"
+                  className={`navbar-v1__notification-link${notificationsOpen ? " is-active" : ""}`}
+                  onClick={() => setNotificationsOpen(true)}
+                  title="Activity feed"
+                  type="button"
                 >
                   <Bell size={17} aria-hidden="true" />
-                </Link>
+                </button>
               )}
               {roleItems.length === 0 && (
                 <Link className="navbar-v1__dashboard-link" to={dashboardPath}>
@@ -324,14 +337,17 @@ export default function NavbarV1() {
           {user ? (
             <>
               {notificationsPath && (
-                <Link
-                  className={`navbar-v1__mobile-role-link${isCurrentRoute(notificationsPath) ? " is-active" : ""}`}
-                  onClick={closeMobileMenu}
-                  to={notificationsPath}
+                <button
+                  className="navbar-v1__mobile-role-link"
+                  onClick={() => {
+                    closeMobileMenu();
+                    setNotificationsOpen(true);
+                  }}
+                  type="button"
                 >
                   <Bell size={16} aria-hidden="true" />
-                  Notifications
-                </Link>
+                  Activity Feed
+                </button>
               )}
               <div className="navbar-v1__mobile-account">
                 <div className="navbar-v1__mobile-account-info">
@@ -362,5 +378,12 @@ export default function NavbarV1() {
         </nav>
       )}
     </header>
+    {notificationsPath && (
+      <Notifications
+        isOpen={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+      />
+    )}
+    </>
   );
 }

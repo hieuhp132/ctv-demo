@@ -110,7 +110,16 @@ async function adminUsersRequest(path = "", options = {}) {
       ...options.headers,
     },
   });
-  const data = await response.json();
+  const responseText = await response.text();
+  let data;
+  try {
+    data = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    if (response.status === 404) {
+      throw new Error("User management API is not deployed on the backend yet. Deploy the latest server code and try again.");
+    }
+    throw new Error(`User management API returned an invalid response (HTTP ${response.status}).`);
+  }
   if (!response.ok || data.success === false) {
     throw new Error(data.message || "User management request failed");
   }

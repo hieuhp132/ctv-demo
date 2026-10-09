@@ -955,3 +955,320 @@ html[data-theme="dark"] .navbar-v1--authenticated .navbar-v1__role-links a.is-ac
     opacity: 1;
     transform: translateY(0);
 }
+
+html[data-theme="dark"] .job-detail .payment-schedule-intro,
+html[data-theme="dark"] .job-detail .payment-schedule-table,
+html[data-theme="dark"] .job-detail .job-html-content {
+  color: var(--app-text);
+}
+
+html[data-theme="dark"] .job-detail .payment-schedule-table th,
+html[data-theme="dark"] .job-detail .payment-schedule-table td {
+  background: var(--app-surface-muted);
+  border-color: var(--app-border);
+  color: var(--app-text);
+}
+
+html[data-theme="dark"] .job-detail .payment-schedule-table td {
+  background: var(--app-surface);
+}
+
+html[data-theme="dark"] .job-detail .related-jobs-empty {
+  background: var(--app-surface-muted);
+  border-color: var(--app-border);
+  color: var(--app-text-muted);
+}
+
+html[data-theme="dark"] .job-detail .related-job-card:hover {
+  background: var(--app-surface-raised);
+}
+
+html[data-theme="dark"] .job-detail .related-job-card:hover strong {
+  color: var(--app-cyan);
+}
+
+html[data-theme="dark"] .job-detail .badge-salary,
+html[data-theme="dark"] .job-detail .badge-location,
+html[data-theme="dark"] .job-detail .badge-reward,
+html[data-theme="dark"] .job-detail .badge-keyword {
+  background: var(--app-surface-raised);
+  border-color: var(--app-border);
+  color: var(--app-text);
+}
+
+html[data-theme="dark"] .job-detail .modal,
+html[data-theme="dark"] .job-detail .modal-form {
+  background: var(--app-surface);
+  border-color: var(--app-border);
+  color: var(--app-text);
+}
+
+html[data-theme="dark"] .job-detail .form-group label {
+  color: var(--app-text-muted);
+}
+
+html[data-theme="dark"] .job-detail .form-group input,
+html[data-theme="dark"] .job-detail .form-group textarea,
+html[data-theme="dark"] .job-detail .form-group select {
+  background: var(--app-surface-muted);
+  border-color: var(--app-border);
+  color: var(--app-text);
+}
+
+html[data-theme="dark"] .job-detail .modal-actions {
+  border-color: var(--app-border);
+}
+
+html[data-theme="dark"] .job-detail .modal-actions button:not(.primary) {
+  background: var(--app-surface-raised);
+  color: var(--app-text);
+}
+
+html[data-theme] .job-detail {
+  box-sizing: border-box;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 28px clamp(16px, 3vw, 40px) 48px;
+  background: transparent;
+  color: var(--app-text);
+}
+
+html[data-theme] .job-detail .page-header {
+  box-sizing: border-box;
+  margin: 0 0 22px;
+  padding: clamp(20px, 3vw, 34px);
+  border: 1px solid var(--app-border);
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--app-surface-raised), var(--app-surface));
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.14);
+}
+
+html[data-theme] .job-detail .page-header h2 {
+  color: var(--app-text);
+  font-size: clamp(1.5rem, 2.6vw, 2.15rem);
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+}
+
+html[data-theme] .job-detail .job-layout {
+  box-sizing: border-box;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  gap: 20px;
+  padding: 0;
+}
+
+html[data-theme] .job-detail .job-sidebar {
+  gap: 16px;
+  min-width: 0;
+}
+
+html[data-theme] .job-detail .comments-activity-wrapper,
+html[data-theme] .job-detail .job-sidebar .card,
+html[data-theme] .job-detail .job-section,
+html[data-theme] .job-detail .job-info-grid .info-box,
+html[data-theme] .job-detail .job-pipeline {
+  border: 1px solid var(--app-border);
+  border-radius: 13px;
+  background: var(--app-surface);
+  color: var(--app-text);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.1);
+}
+
+html[data-theme] .job-detail .job-section {
+  margin-bottom: 18px;
+  padding: clamp(18px, 2vw, 26px);
+}
+
+html[data-theme] .job-detail .job-section h1 {
+  border-bottom: 1px solid var(--app-border);
+  color: var(--app-text);
+  font-size: 1.1rem;
+  letter-spacing: -0.015em;
+  padding-bottom: 12px;
+}
+
+html[data-theme] .job-detail .job-html-content,
+html[data-theme] .job-detail .job-html-content strong,
+html[data-theme] .job-detail .payment-schedule-intro,
+html[data-theme] .job-detail .payment-schedule-table {
+  color: var(--app-text);
+}
+
+html[data-theme] .job-detail .job-html-content * {
+  background-color: transparent !important;
+}
+
+html[data-theme] .job-detail .job-info-grid .info-box,
+html[data-theme] .job-detail .job-pipeline,
+html[data-theme] .job-detail .job-pipeline-grid > div,
+html[data-theme] .job-detail .comments-activity-tabs,
+html[data-theme] .job-detail .comments-activity-content {
+  background: var(--app-surface-muted);
+}
+
+html[data-theme] .job-detail .job-pipeline h3,
+html[data-theme] .job-detail .job-pipeline-grid span,
+html[data-theme] .job-detail .job-pipeline-grid strong,
+html[data-theme] .job-detail .info-box label,
+html[data-theme] .job-detail .info-box strong {
+  color: var(--app-text);
+}
+
+html[data-theme] .job-detail .job-pipeline-grid > div,
+html[data-theme] .job-detail .job-pipeline-grid > div:last-child {
+  border-color: var(--app-border);
+}
+
+html[data-theme] .job-detail .job-sidebar .card h4,
+html[data-theme] .job-detail .comments-section h3,
+html[data-theme] .job-detail .activity-section h3 {
+  color: var(--app-text);
+}
+
+html[data-theme] .job-detail .job-sidebar .card.admin {
+  border-color: color-mix(in srgb, var(--app-cyan) 24%, var(--app-border));
+  background: color-mix(in srgb, var(--app-cyan) 5%, var(--app-surface));
+}
+
+html[data-theme] .job-detail .tab-button {
+  color: var(--app-text-muted);
+}
+
+html[data-theme] .job-detail .tab-button:hover,
+html[data-theme] .job-detail .tab-button.active {
+  color: var(--app-cyan);
+}
+
+html[data-theme] .job-detail .tab-button.active {
+  border-bottom-color: var(--app-cyan);
+}
+
+html[data-theme] .job-detail .activity-item,
+html[data-theme] .job-detail .add-comment-form,
+html[data-theme] .job-detail .comment-content,
+html[data-theme] .job-detail .reply-form {
+  border: 1px solid var(--app-border);
+  background: var(--app-surface-raised);
+  color: var(--app-text);
+}
+
+html[data-theme] .job-detail .activity-item:hover,
+html[data-theme] .job-detail .comment-item:hover .comment-content,
+html[data-theme] .job-detail .reply-item:hover .comment-content {
+  background: var(--app-surface-muted);
+}
+
+html[data-theme] .job-detail .activity-description,
+html[data-theme] .job-detail .author-name,
+html[data-theme] .job-detail .comment-text {
+  color: var(--app-text);
+}
+
+html[data-theme] .job-detail .activity-details,
+html[data-theme] .job-detail .activity-time,
+html[data-theme] .job-detail .comment-time,
+html[data-theme] .job-detail .no-activities,
+html[data-theme] .job-detail .no-comments {
+  color: var(--app-text-muted);
+}
+
+html[data-theme] .job-detail .add-comment-form textarea,
+html[data-theme] .job-detail .edit-comment textarea,
+html[data-theme] .job-detail .reply-form textarea,
+html[data-theme] .job-detail .form-group input,
+html[data-theme] .job-detail .form-group textarea,
+html[data-theme] .job-detail .form-group select {
+  border-color: var(--app-border);
+  background: var(--app-surface-muted);
+  color: var(--app-text);
+}
+
+html[data-theme] .job-detail .add-comment-form textarea::placeholder,
+html[data-theme] .job-detail .reply-form textarea::placeholder {
+  color: var(--app-text-muted);
+}
+
+html[data-theme] .job-detail .comment-actions,
+html[data-theme] .job-detail .modal-actions {
+  border-color: var(--app-border);
+}
+
+html[data-theme] .job-detail .reply-item .comment-content {
+  border-left-color: var(--app-cyan);
+}
+
+html[data-theme] .job-detail .reply-item .comment-text {
+  color: var(--app-text);
+}
+
+html[data-theme] .job-detail .comment-avatar {
+  background: var(--app-surface-muted);
+  color: var(--app-text-muted);
+}
+
+html[data-theme] .job-detail .job-sidebar input[type="file"] {
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 7px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface-muted);
+  color: var(--app-text);
+}
+
+html[data-theme] .job-detail .job-sidebar input[type="file"]::file-selector-button {
+  margin-right: 8px;
+  padding: 6px 9px;
+  border: 1px solid var(--app-border);
+  border-radius: 6px;
+  background: var(--app-surface-raised);
+  color: var(--app-text);
+  cursor: pointer;
+}
+
+html[data-theme] .job-detail .job-sidebar input[type="file"] + button {
+  align-self: flex-start;
+  padding: 8px 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 7px;
+  background: var(--app-surface-raised);
+  color: var(--app-text);
+  cursor: pointer;
+}
+
+html[data-theme] .job-detail .job-sidebar input[type="file"] + button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (max-width: 1024px) {
+  html[data-theme] .job-detail .job-layout {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+}
+
+@media (max-width: 900px) {
+  html[data-theme] .job-detail {
+    padding: 18px 14px 36px;
+  }
+
+  html[data-theme] .job-detail .job-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  html[data-theme] .job-detail .page-header {
+    border-radius: 14px;
+    padding: 18px;
+  }
+
+  html[data-theme] .job-detail .job-tags {
+    gap: 8px;
+  }
+
+  html[data-theme] .job-detail .job-tags span {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}

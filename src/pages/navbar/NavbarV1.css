@@ -1382,7 +1382,9 @@ html[data-theme="light"] .navbar-v1--authenticated .navbar-v1__account-avatar {
   border-radius: 50%;
   background: #192432;
   color: #b8c6d4;
-  text-decoration: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
   transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
 }
 
