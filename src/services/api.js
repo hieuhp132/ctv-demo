@@ -17,7 +17,8 @@ export async function getUsersListL() {
     headers: { "Content-Type": "application/json" },
   });
   if (!res.ok) throw new Error("[Client]: Failed get local userlist");
-  return await res.json();
+  const users = await res.json();
+  return Array.isArray(users) ? users : [];
 }
 
 export async function saveJobL(jobId, userId) {
@@ -98,6 +99,61 @@ function authHeaders() {
   const session = getSession();
   const token = session?.token || session?.user?.token;
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+async function adminUsersRequest(path = "", options = {}) {
+  const response = await fetch(`${API_BASE}/local/admin/users${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+      ...options.headers,
+    },
+  });
+  const data = await response.json();
+  if (!response.ok || data.success === false) {
+    throw new Error(data.message || "User management request failed");
+  }
+  return data;
+}
+
+export async function getAdminUsersL() {
+  const data = await adminUsersRequest();
+  return data.data;
+}
+
+export async function createAdminUserL(user) {
+  return adminUsersRequest("", {
+    method: "POST",
+    body: JSON.stringify(user),
+  });
+}
+
+export async function updateAdminUserRoleL(userId, role) {
+  return adminUsersRequest(`/${encodeURIComponent(userId)}/role`, {
+    method: "PATCH",
+    body: JSON.stringify({ role }),
+  });
+}
+
+export async function updateAdminUserStatusL(userId, status) {
+  return adminUsersRequest(`/${encodeURIComponent(userId)}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export async function resetAdminUserPasswordL(userId, password) {
+  return adminUsersRequest(`/${encodeURIComponent(userId)}/password`, {
+    method: "PUT",
+    body: JSON.stringify({ password }),
+  });
+}
+
+export async function deleteAdminUserL(userId) {
+  return adminUsersRequest(`/${encodeURIComponent(userId)}`, {
+    method: "DELETE",
+  });
 }
 
 export async function fetchAllJobs(limit) {
@@ -339,7 +395,7 @@ export async function updateBasicInfoOnServerL(userId, basicInfo) {
       `${API_BASE}/local/users/updateBasicInfo/${userId}`,
       {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify(basicInfo),
       },
     );

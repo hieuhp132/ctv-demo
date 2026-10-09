@@ -111,7 +111,9 @@ export default function NavbarV1() {
               ANT <span>TECH</span>
             </span>
             <span className="navbar-v1__tagline">
-              {user?.role ? `${user.role} workspace` : "Headhunter • Creative UI/UX"}
+              {user?.role
+                ? `${user.role === "lower_admin" ? "Lower admin" : user.role} workspace`
+                : "Headhunter • Creative UI/UX"}
             </span>
           </span>
         </a>

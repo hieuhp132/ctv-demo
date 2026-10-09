@@ -1,5 +1,6 @@
 ﻿const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { randomBytes } = require("crypto");
 const { callSupabaseFunction } = require("../utils/supabaseClient"); // chỗ bạn export supabase function
 const { logLogin } = require("../utils/authLogger");
 const { writeFile, readFile } = require("../utils/fileStore.js");
@@ -9,7 +10,14 @@ const { logActivityInternal } = require("./comments.js");
 // -------------------- USERS --------------------
 const getUsers = (req, res) => {
     const users = readFile("users.json");
-    res.json(users);
+    res.json(users.map(({ _id, name, email, role, status }) => ({
+        _id,
+        id: _id,
+        name,
+        email,
+        role,
+        status,
+    })));
 };
 
 const getUserById = (req, res) => {
@@ -62,6 +70,17 @@ const updateUserStatus = async (req, res) => {
 
         if (userIndex === -1) {
             return res.status(404).json({ success: false, message: "Không tìm thấy người dùng" });
+        }
+
+        const targetUser = users[userIndex];
+        if (String(targetUser._id) === String(req.admin._id) && newStatus !== "Active") {
+            return res.status(400).json({ success: false, message: "You cannot deactivate your own account" });
+        }
+        if (targetUser.role === "admin" && targetUser.status === "Active" && newStatus !== "Active") {
+            const activeAdmins = users.filter(user => user.role === "admin" && user.status === "Active");
+            if (activeAdmins.length <= 1) {
+                return res.status(400).json({ success: false, message: "At least one active admin must remain" });
+            }
         }
 
         // Cập nhật trạng thái
@@ -142,19 +161,21 @@ const getUserStatus = (req, res) => {
   }
 };
 
-const updateBasicInfo = (req, res) => {
+const updateBasicInfo = async (req, res) => {
   try {
     const { id } = req.params;
     const {
       name,
       email,
-      role,
       newPassword,
       bankInfo,
     } = req.body;
 
     if (!id) {
       return res.status(400).json({ message: "User id is required" });
+    }
+    if (String(req.user.id) !== String(id)) {
+      return res.status(403).json({ message: "You can only update your own profile" });
     }
 
     const users = readFile("users.json") || [];
@@ -178,14 +199,8 @@ const updateBasicInfo = (req, res) => {
       user.email = email;
     }
 
-    if (role !== undefined) {
-      user.role = role;
-    }
-
-    /* ================= UPDATE PASSWORD ================= */
-    // ⚠️ Local demo: plain text (KHÔNG dùng cho production)
     if (newPassword && newPassword.trim()) {
-      user.password = newPassword;
+      user.password = await bcrypt.hash(newPassword, 10);
     }
 
     /* ================= UPDATE BANK INFO ================= */
@@ -471,6 +486,15 @@ const doRegister = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     const { email, newPassword, responseWithEmail } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+    if (responseWithEmail) {
+      return res.status(400).json({ success: false, message: "Use the forgot-password endpoint" });
+    }
+    if (typeof newPassword !== "string" || newPassword.length < 8) {
+      return res.status(400).json({ success: false, message: "Password must be at least 8 characters" });
+    }
 
     const users = readFile("users.json") || [];
 
@@ -491,22 +515,6 @@ const resetPassword = async (req, res) => {
 
     writeFile("users.json", users);
 
-    if (responseWithEmail) {
-      try {
-        await callSupabaseFunction("resetPassword", {
-          email,
-          password: newPassword,
-        });
-      } catch (err) {
-        console.error("⚠️ Failed to send notification:", err.message);
-      }
-
-      return res.json({
-        success: true,
-        message: "New password sent to your email.",
-      });
-    }
-
     return res.json({
       success: true,
       message: "Đặt lại mật khẩu thành công",
@@ -517,6 +525,46 @@ const resetPassword = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Lỗi server",
+    });
+  }
+};
+
+const forgotPassword = async (req, res) => {
+  const email = String(req.body.email || "").trim().toLowerCase();
+  if (!email) {
+    return res.status(400).json({ success: false, message: "Email is required" });
+  }
+
+  try {
+    const users = readFile("users.json") || [];
+    const userIndex = users.findIndex(
+      user => String(user.email || "").toLowerCase() === email
+    );
+
+    if (userIndex === -1) {
+      return res.json({
+        success: true,
+        message: "If the account exists, a new password will be sent to its email.",
+      });
+    }
+
+    const newPassword = randomBytes(24).toString("base64url");
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await callSupabaseFunction("resetPassword", { email, password: newPassword });
+
+    users[userIndex].password = hashedPassword;
+    users[userIndex].updatedAt = new Date().toISOString();
+    writeFile("users.json", users);
+
+    return res.json({
+      success: true,
+      message: "If the account exists, a new password will be sent to its email.",
+    });
+  } catch (err) {
+    console.error("Forgot password failed:", err);
+    return res.status(502).json({
+      success: false,
+      message: "Unable to send the reset email. Please try again later.",
     });
   }
 };
@@ -1118,7 +1166,7 @@ const updateReferral = (req, res) => {
 module.exports = {
     // Users
     getUsers, getUserById, getProfile,
-    resetPassword, updateBasicInfo,
+    resetPassword, forgotPassword, updateBasicInfo,
     createUser,
     removeUser,
     doLogin,

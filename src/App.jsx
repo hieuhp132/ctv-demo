@@ -91,7 +91,7 @@ function AppRoutes() {
         <Route path="/frontend/update" element={<NewHome />} />
 
         {/* ADMIN */}
-        <Route element={<PrivateRoute roles={["admin"]} />}>
+        <Route element={<PrivateRoute roles={["admin", "lower_admin"]} />}>
           <Route path="/admin" element={<Navigate to={ROLE_ROUTES.admin.jobs} replace />} />
           <Route path={ROLE_ROUTES.admin.profile} element={<AdProfile />} />
           <Route path={ROLE_ROUTES.admin.jobs} element={<AdJobsList />} />

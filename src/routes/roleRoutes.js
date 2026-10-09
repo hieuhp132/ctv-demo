@@ -1,15 +1,18 @@
+const adminRoutes = {
+  profile: "/admin/profile",
+  jobs: "/admin/jobs",
+  jobDetail: "/admin/job/:id",
+  statistics: "/admin/statistics",
+  candidates: "/admin/candidates",
+  savedJobs: "/admin/saved-jobs",
+  myBrand: "/admin/my-brand",
+  users: "/admin/users",
+  notification: "/admin/notifications",
+};
+
 export const ROLE_ROUTES = {
-  admin: {
-    profile: "/admin/profile",
-    jobs: "/admin/jobs",
-    jobDetail: "/admin/job/:id",
-    statistics: "/admin/statistics",
-    candidates: "/admin/candidates",
-    savedJobs: "/admin/saved-jobs",
-    myBrand: "/admin/my-brand",
-    users: "/admin/users",
-    notification: "/admin/notifications",
-  },
+  admin: adminRoutes,
+  lower_admin: adminRoutes,
 
   recruiter: {
     dashboard: "/recruiter/dashboard",
@@ -29,6 +32,13 @@ export const ROLE_NAV_ITEMS = {
     { label: "Candidate Management", path: ROLE_ROUTES.admin.candidates },
     { label: "Saved Jobs", path: ROLE_ROUTES.admin.savedJobs },
     { label: "User Management", path: ROLE_ROUTES.admin.users },
+  ],
+  lower_admin: [
+    { label: "Dashboard", path: adminRoutes.jobs },
+    { label: "Statistics", path: adminRoutes.statistics },
+    { label: "Candidate Management", path: adminRoutes.candidates },
+    { label: "Saved Jobs", path: adminRoutes.savedJobs },
+    { label: "User Management", path: adminRoutes.users },
   ],
   recruiter: [
     { label: "Dashboard", path: ROLE_ROUTES.recruiter.dashboard },

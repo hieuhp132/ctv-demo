@@ -57,7 +57,8 @@ export default function Card({
     return t.replace(/\s+/g, " ").trim().slice(0, 180);
   })();
 
-  const jobUrl = `/${role}/job/${job._id}`;
+  const rolePath = role === "admin" || role === "lower_admin" ? "admin" : role;
+  const jobUrl = `/${rolePath}/job/${job._id}`;
 
   const pipeline = job.pipeline || {};
 
@@ -169,7 +170,7 @@ export default function Card({
 
         {/* ACTIONS */}
         <div className="job-actions">
-          {role === "admin" && (
+          {(role === "admin" || role === "lower_admin") && (
             <>
               <button
                 onClick={(e) => {

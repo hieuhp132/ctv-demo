@@ -411,7 +411,7 @@ export default function HomePage() {
                 </>
               ) : (
                 <Link
-                  to={user.role === "admin" ? "/admin" : "/dashboard"}
+                  to={["admin", "lower_admin"].includes(user.role) ? "/admin" : "/dashboard"}
                   onClick={() => setMenuOpen(false)}
                 >
                   Go to Dashboard

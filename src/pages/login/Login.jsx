@@ -94,10 +94,10 @@ const LoginPage = () => {
     setResetMessage("");
     setResetLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/local/users/reset`, {
+      const res = await fetch(`${API_BASE}/local/users/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: resetEmail, newPassword: "123456", responseWithEmail: true }),
+        body: JSON.stringify({ email: resetEmail }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Reset failed");

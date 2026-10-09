@@ -23,7 +23,7 @@ export default function JobDetail() {
   const { id } = useParams();
   const { user } = useAuth();
   const isCTV = user?.role === "recruiter";
-  const isAdmin = user?.role === "admin";
+  const isAdmin = ["admin", "lower_admin"].includes(user?.role);
   const recruiterId = useMemo(() => user?.email || user?.id, [user]);
 
   const [job, setJob] = useState(null);

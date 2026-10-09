@@ -1,19 +1,29 @@
 const express = require("express");
 const router = express.Router();
 const localCtrl = require("../controllers/local");
+const userManagement = require("../controllers/userManagement");
+const authMiddleware = require("../middlewares/auth");
+const adminOnly = require("../middlewares/admin");
 
 // ---------- USERS ----------
 router.get("/users", localCtrl.getUsers);
-router.post("/users/reset", localCtrl.resetPassword);
+router.get("/admin/users", ...adminOnly, userManagement.getUsers);
+router.post("/admin/users", ...adminOnly, userManagement.createUser);
+router.patch("/admin/users/:userId/role", ...adminOnly, userManagement.updateRole);
+router.patch("/admin/users/:userId/status", ...adminOnly, userManagement.updateStatus);
+router.put("/admin/users/:userId/password", ...adminOnly, userManagement.resetPassword);
+router.delete("/admin/users/:userId", ...adminOnly, userManagement.deleteUser);
+router.post("/users/reset", ...adminOnly, userManagement.resetPasswordByEmail);
+router.post("/users/forgot-password", localCtrl.forgotPassword);
 router.post("/login", localCtrl.doLogin);
 router.post("/register", localCtrl.doRegister);
-router.post("/users", localCtrl.createUser);
-router.delete("/users/:userId/remove", localCtrl.removeUser);
-router.post("/users/update-status", localCtrl.updateUserStatus);
+router.post("/users", ...adminOnly, userManagement.createUser);
+router.delete("/users/:userId/remove", ...adminOnly, userManagement.deleteUser);
+router.post("/users/update-status", ...adminOnly, userManagement.updateStatus);
 router.get("/user-status", localCtrl.getUserStatus);
 // To Implement:
 router.get("/users/profile/:id", localCtrl.getProfile);
-router.put("/users/updateBasicInfo/:id", localCtrl.updateBasicInfo)
+router.put("/users/updateBasicInfo/:id", authMiddleware, localCtrl.updateBasicInfo)
 
 // ---------- JOBS ----------
 router.get("/jobs", localCtrl.getJobs);

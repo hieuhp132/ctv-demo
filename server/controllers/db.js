@@ -62,7 +62,6 @@ exports.showUsers = async (req, res) => {
         const formattedUsers = users.map( user => ({
             id: user._id.toString(),
             name: user.name,
-            password: user.password,
             email: user.email,
             credit: user.credit,
             role: user.role,

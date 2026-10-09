@@ -509,7 +509,7 @@ export default function All() {
   return (
     <div className="admin-dashboard">
       <Ambient3DObject className="ambient-3d-object--admin" />
-      {user.role === "admin" && (
+      {["admin", "lower_admin"].includes(user.role) && (
         <div className="tasks">
           <NavLink to="/admin-dashboard">Beta</NavLink>
           <NavLink to="/admin/users">Users List</NavLink>
@@ -566,7 +566,7 @@ export default function All() {
             <Plus size={17} aria-hidden="true" />
             <span>Add Job</span>
           </button>,
-          user?.role === "admin" && (
+          ["admin", "lower_admin"].includes(user?.role) && (
             <button
               className="section-action-button section-action-button--generate"
               key="migrate"
