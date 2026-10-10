@@ -108,12 +108,12 @@ const SignUp = ({ recruiterType = "freelancer" }) => {
             <div className="mb-10">
 
               <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
-                {isFulltimeRecruiter ? "Join as a Full-time Recruiter" : "Create Account"}
+                {isFulltimeRecruiter ? "Join as an Employee" : "Create Account"}
               </h1>
 
               <p className="text-white/60 text-sm">
                 {isFulltimeRecruiter
-                  ? "Create your hiring workspace and manage recruitment end to end."
+                  ? "Create your employee workspace and manage recruitment end to end."
                   : "Join AntTech ATS and start managing talent globally"}
               </p>
             </div>
@@ -272,11 +272,11 @@ const SignUp = ({ recruiterType = "freelancer" }) => {
               <p className="text-white/40 text-xs mt-4">
                 {isFulltimeRecruiter ? "Joining as a freelancer? " : "Hiring for a company? "}
                 <button
-                  onClick={() => navigate(isFulltimeRecruiter ? "/signup" : "/signup/recruiter-fulltime")}
+                  onClick={() => navigate(isFulltimeRecruiter ? "/signup" : "/signup/employee")}
                   className="text-white font-medium hover:underline"
                   type="button"
                 >
-                  {isFulltimeRecruiter ? "Register as recruiter freelancer" : "Register as recruiter full-time"}
+                  {isFulltimeRecruiter ? "Register as recruiter freelancer" : "Register as employee"}
                 </button>
               </p>
             </div>
@@ -296,7 +296,7 @@ const SignUp = ({ recruiterType = "freelancer" }) => {
 
             <p className="text-white/40 text-lg max-w-xs mx-auto">
               {isFulltimeRecruiter
-                ? "Build your hiring pipeline, nurture talent and deliver better candidate experiences."
+                ? "Build your hiring pipeline, nurture talent and deliver better candidate experiences as an employee."
                 : "Access a global pool of elite talent and streamline your hiring process."}
             </p>
           </div>

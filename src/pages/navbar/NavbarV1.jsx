@@ -124,7 +124,7 @@ export default function NavbarV1() {
             </span>
             <span className="navbar-v1__tagline">
               {user?.role
-                ? `${user.role === "lower_admin" ? "Lower admin" : user.role === "recruiter_freelancer" ? "Freelance recruiter" : user.role === "recruiter_fulltime" ? "Full-time recruiter" : user.role} workspace`
+                ? `${user.role === "lower_admin" ? "Lower admin" : user.role === "recruiter_freelancer" ? "Freelance recruiter" : user.role === "recruiter_fulltime" ? "Employee" : user.role} workspace`
                 : "Headhunter • Creative UI/UX"}
             </span>
           </span>

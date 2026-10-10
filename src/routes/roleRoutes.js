@@ -24,9 +24,9 @@ export const ROLE_ROUTES = {
     notification: "/recruiter/notifications",
   },
   recruiter_fulltime: {
-    dashboard: "/recruiter-fulltime",
-    jobs: "/recruiter-fulltime",
-    candidates: "/recruiter-fulltime",
+    dashboard: "/employee",
+    jobs: "/employee",
+    candidates: "/employee",
   },
 };
 
@@ -55,7 +55,7 @@ export const ROLE_NAV_ITEMS = {
     { label: "Saved Jobs", path: ROLE_ROUTES.recruiter_freelancer.savedJobs },
   ],
   recruiter_fulltime: [
-    { label: "Recruitment workspace", path: ROLE_ROUTES.recruiter_fulltime.dashboard },
+    { label: "Employee workspace", path: ROLE_ROUTES.recruiter_fulltime.dashboard },
   ],
 };
 

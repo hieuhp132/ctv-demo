@@ -14,15 +14,15 @@ import {
   UsersRound,
   X,
 } from "lucide-react";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import {
-  createHiringManagerJobL,
+  createEmployeeJobL,
   fetchAllJobsStrict,
   listReferrals,
-  updateHiringManagerJobL,
-  updateHiringManagerReferralL,
-} from "../../../services/api";
-import "./RecruiterFulltimeWorkspace.css";
+  updateEmployeeJobL,
+  updateEmployeeReferralL,
+} from "../../services/api";
+import "./EmployeeWorkspace.css";
 
 const PIPELINE = ["submitted", "under_review", "interviewing", "offer", "hired", "onboard", "rejected"];
 const EMPTY_JOB = {
@@ -63,7 +63,7 @@ function Metric({ icon: Icon, label, value, note, tone }) {
   );
 }
 
-export default function RecruiterFulltimeWorkspace() {
+export default function EmployeeWorkspace() {
   const { user } = useAuth();
   const userId = user?._id || user?.id || user?.email;
   const [jobs, setJobs] = useState([]);
@@ -95,7 +95,7 @@ export default function RecruiterFulltimeWorkspace() {
       setJobs(ownedJobs);
       setReferrals(pipeline);
     } catch (error) {
-      console.error("Failed to load full-time recruiter workspace:", error);
+      console.error("Failed to load employee workspace:", error);
       setLoadError(error.message || "Unable to load your recruitment workspace.");
     } finally {
       setLoading(false);
@@ -186,8 +186,8 @@ export default function RecruiterFulltimeWorkspace() {
         jobsdetail: { description: jobForm.description, requirement: jobForm.requirement },
         status: jobForm.status,
       };
-      if (editingJob) await updateHiringManagerJobL(editingJob._id, payload);
-      else await createHiringManagerJobL(payload);
+      if (editingJob) await updateEmployeeJobL(editingJob._id, payload);
+      else await createEmployeeJobL(payload);
       setJobModal(false);
       await loadWorkspace();
     } catch (error) {
@@ -200,7 +200,7 @@ export default function RecruiterFulltimeWorkspace() {
   const toggleJobStatus = async (job) => {
     setActionError("");
     try {
-      await updateHiringManagerJobL(job._id, { status: job.status === "Active" ? "Inactive" : "Active" });
+      await updateEmployeeJobL(job._id, { status: job.status === "Active" ? "Inactive" : "Active" });
       await loadWorkspace();
     } catch (error) {
       setActionError(error.message || "Unable to update this job.");
@@ -236,7 +236,7 @@ export default function RecruiterFulltimeWorkspace() {
           ? candidate.hiredAt || new Date().toISOString()
           : candidate.hiredAt,
       };
-      await updateHiringManagerReferralL(candidate._id || candidate.id, updates);
+      await updateEmployeeReferralL(candidate._id || candidate.id, updates);
       setCandidate(null);
       await loadWorkspace();
     } catch (error) {
@@ -260,7 +260,7 @@ export default function RecruiterFulltimeWorkspace() {
       <div className="ft-container">
         <header className="ft-header">
           <div>
-            <span className="ft-eyebrow">RECRUITER WORKSPACE · FULL-TIME</span>
+            <span className="ft-eyebrow">EMPLOYEE WORKSPACE</span>
             <h1>Good to see you, {user?.name?.split(" ")[0] || "Recruiter"}</h1>
             <p>Own every step from the first conversation to a successful first day.</p>
           </div>

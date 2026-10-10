@@ -225,7 +225,7 @@ export async function updateJobL(updated) {
   return saved;
 }
 
-async function fulltimeRecruiterRequest(path, options) {
+async function employeeRequest(path, options) {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
@@ -245,15 +245,15 @@ async function fulltimeRecruiterRequest(path, options) {
   return data;
 }
 
-export async function createHiringManagerJobL(job) {
-  return fulltimeRecruiterRequest("/local/recruiter-fulltime/jobs", {
+export async function createEmployeeJobL(job) {
+  return employeeRequest("/local/recruiter-fulltime/jobs", {
     method: "POST",
     body: JSON.stringify(job),
   });
 }
 
-export async function updateHiringManagerJobL(id, updates) {
-  return fulltimeRecruiterRequest(`/local/recruiter-fulltime/jobs/${encodeURIComponent(id)}`, {
+export async function updateEmployeeJobL(id, updates) {
+  return employeeRequest(`/local/recruiter-fulltime/jobs/${encodeURIComponent(id)}`, {
     method: "PUT",
     body: JSON.stringify(updates),
   });
@@ -402,8 +402,8 @@ export async function listReferrals({
   return Array.isArray(data.items) ? data.items : [];
 }
 
-export async function updateHiringManagerReferralL(id, updates) {
-  return fulltimeRecruiterRequest(`/local/referrals/hiring-manager/${encodeURIComponent(id)}`, {
+export async function updateEmployeeReferralL(id, updates) {
+  return employeeRequest(`/local/referrals/hiring-manager/${encodeURIComponent(id)}`, {
     method: "PUT",
     body: JSON.stringify(updates),
   });

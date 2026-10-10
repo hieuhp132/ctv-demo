@@ -36,7 +36,7 @@ import RecrSavedJobs from "./pages/recruiter/jobs/Saved";
 import RecrCandidates from "./pages/recruiter/candidates_tracker/Candidates";
 import RecrNotification from "./pages/recruiter/notifications/Notification";
 import RecruiterWorkspace from "./pages/recruiter/dashboard/RecruiterWorkspace";
-import RecruiterFulltimeWorkspace from "./pages/recruiter/fulltime/RecruiterFulltimeWorkspace";
+import EmployeeWorkspace from "./pages/employee/EmployeeWorkspace";
 import Update from "./pages/update/Update";
 import TermsPage from "./pages/terms/Terms";
 
@@ -85,7 +85,8 @@ function AppRoutes() {
         <Route path="/" element={<NewHome />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
-        <Route path="/signup/recruiter-fulltime" element={<SignUp recruiterType="fulltime" />} />
+        <Route path="/signup/employee" element={<SignUp recruiterType="fulltime" />} />
+        <Route path="/signup/recruiter-fulltime" element={<Navigate to="/signup/employee" replace />} />
         <Route path="/pending" element={<Pending />} />
         <Route path="/dashboard" element={<DashboardRedirect />} />
         <Route path="/notifications/update" element={<Update />} />
@@ -137,7 +138,8 @@ function AppRoutes() {
         </Route>
 
         <Route element={<PrivateRoute roles={["recruiter_fulltime"]} />}>
-          <Route path="/recruiter-fulltime" element={<RecruiterFulltimeWorkspace />} />
+          <Route path="/employee" element={<EmployeeWorkspace />} />
+          <Route path="/recruiter-fulltime" element={<Navigate to="/employee" replace />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
