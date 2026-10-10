@@ -412,6 +412,12 @@ const doLogin = async (req, res) => {
       });
     }
 
+    if (user.role === "recruiter") {
+      user.role = "recruiter_freelancer";
+      user.updatedAt = new Date().toISOString();
+      writeFile("users.json", users);
+    }
+
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -440,27 +446,44 @@ const doLogin = async (req, res) => {
   }
 };
 
-const doRegister = async (req, res) => {
+const registerLocalUser = (role, requireCompany = false) => async (req, res) => {
   try {
-    const { name, email, password, fromSupabase } = req.body;
-    const users = readFile("users.json");
+    const name = String(req.body.name || "").trim();
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const password = String(req.body.password || "");
+    const company = String(req.body.company || "").trim();
+    const users = readFile("users.json") || [];
 
-    const existed = users.find(u => u.email === email);
-    if (existed && existed.password && !fromSupabase) {
+    if (!name || name.length > 100) {
+      return res.status(400).json({ success: false, message: "A valid name is required" });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+      return res.status(400).json({ success: false, message: "A valid email address is required" });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+    }
+    if (requireCompany && !company) {
+      return res.status(400).json({ success: false, message: "Company name is required" });
+    }
+
+    const existed = users.find((user) => String(user.email || "").trim().toLowerCase() === email);
+    if (existed && (requireCompany || existed.password)) {
       return res.status(400).json({
         success: false,
-        message: "Email đã tồn tại",
+        message: "An account with this email already exists",
       });
     }
 
-    const hashed = password ? await bcrypt.hash(password, 10) : null;
+    const hashed = await bcrypt.hash(password, 10);
 
     const newUser = {
       _id: Date.now().toString(),
-      name: name || "New User",
+      name,
       email,
       password: hashed,
-      role: "recruiter",
+      ...(requireCompany ? { company } : {}),
+      role,
       status: "Pending",
       credit: 0,
       createdAt: new Date().toISOString(),
@@ -477,10 +500,13 @@ const doRegister = async (req, res) => {
       user: safeUser,
     });
   } catch (err) {
-    console.error("doRegister error:", err);
+    console.error("Recruiter registration error:", err);
     res.status(500).json({ success: false, message: "Lỗi server" });
   }
 };
+
+const doRegister = registerLocalUser("recruiter_freelancer");
+const doRegisterFulltime = registerLocalUser("recruiter_fulltime", true);
 
 
 const resetPassword = async (req, res) => {
@@ -786,7 +812,7 @@ const createJob = (req, res) => {
   writeFile("jobs.json", jobs);
 
   // Log activity
-  const adminName = req.body.adminName || req.user?.name || "Admin";
+  const adminName = req.body.adminName || req.user?.name || "Recruiter";
   logActivityInternal(
     "job_created",
     `${adminName} created job "${newJob.title}"`,
@@ -852,6 +878,34 @@ const updateJob = (req, res) => {
     res.json(updatedJob);
 };
 
+const createHiringManagerJob = (req, res) => {
+  const title = String(req.body.title || "").trim();
+  const company = String(req.body.company || "").trim();
+  const location = String(req.body.location || "").trim();
+  if (!title || !company || !location) {
+    return res.status(400).json({ message: "Job title, company and location are required" });
+  }
+  req.body = { ...req.body, title, company, location, createdBy: req.user.id };
+  return createJob(req, res);
+};
+
+const updateHiringManagerJob = (req, res) => {
+  const jobs = readFile("jobs.json") || [];
+  const job = jobs.find((entry) => String(entry._id) === String(req.params.id));
+  if (!job) return res.status(404).json({ message: "Job not found" });
+  if (String(job.createdBy || "") !== String(req.user.id)) {
+    return res.status(403).json({ message: "You can only manage job openings you created" });
+  }
+  if (req.body.title !== undefined && !String(req.body.title).trim()) {
+    return res.status(400).json({ message: "Job title cannot be empty" });
+  }
+  const { createdBy, _id, ...updates } = req.body;
+  const updated = { ...job, ...updates, _id: job._id, createdBy: job.createdBy, updatedAt: new Date().toISOString() };
+  const jobIndex = jobs.findIndex((entry) => String(entry._id) === String(job._id));
+  jobs[jobIndex] = updated;
+  writeFile("jobs.json", jobs);
+  return res.json(updated);
+};
 
 const removeJob = (req, res) => {
   const { id } = req.params;
@@ -935,7 +989,6 @@ const getReferrals = (req, res) => {
       : null;
 
     let filtered = referrals.filter((ref) => {
-      /* ===== OWNER FILTER ===== */
       if (isAdminBool) {
         // ADMIN: chỉ match theo admin id
         if (!ref.admin) return false;
@@ -994,6 +1047,73 @@ const getReferrals = (req, res) => {
     console.error("getReferrals error:", err);
     res.status(500).json({ message: "Server error" });
   }
+};
+
+const getHiringManagerReferrals = (req, res) => {
+  try {
+    const ownedJobs = (readFile("jobs.json") || [])
+      .filter((job) => String(job.createdBy || "") === String(req.user.id));
+    const ownedJobIds = new Set(ownedJobs.map((job) => String(job._id)));
+    const { page = 1, limit = 1000, status, q = "" } = req.query;
+    let referrals = (readFile("referrals.json") || []).filter((referral) => ownedJobIds.has(String(referral.job)));
+    if (status) referrals = referrals.filter((referral) => referral.status === status);
+    if (q) {
+      const search = String(q).toLowerCase();
+      referrals = referrals.filter((referral) =>
+        String(referral.candidateName || "").toLowerCase().includes(search) ||
+        String(referral.candidateEmail || "").toLowerCase().includes(search)
+      );
+    }
+    referrals.sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt));
+    const numericLimit = Number(limit);
+    const start = Math.max(0, (Number(page) - 1) * numericLimit);
+    const items = Number.isFinite(numericLimit) && numericLimit > 0
+      ? referrals.slice(start, start + numericLimit)
+      : referrals;
+    return res.json({ items, total: referrals.length, page: Number(page), limit: numericLimit || null });
+  } catch (error) {
+    console.error("getHiringManagerReferrals error:", error);
+    return res.status(500).json({ message: "Failed to load hiring pipeline" });
+  }
+};
+
+const updateHiringManagerReferral = (req, res) => {
+  const referrals = readFile("referrals.json") || [];
+  const referralIndex = referrals.findIndex((entry) => String(entry._id) === String(req.params.id));
+  if (referralIndex === -1) return res.status(404).json({ message: "Candidate referral not found" });
+
+  const referral = referrals[referralIndex];
+  const ownsJob = (readFile("jobs.json") || []).some((job) =>
+    String(job._id) === String(referral.job) && String(job.createdBy || "") === String(req.user.id)
+  );
+  if (!ownsJob) return res.status(403).json({ message: "You can only manage candidates for your job openings" });
+
+  const allowedFields = [
+    "status", "interviewAt", "interviewScore", "interviewQuestions",
+    "crmNotes", "candidateFeedback", "offerSalary", "isTalentPool", "hiredAt",
+  ];
+  const updates = Object.fromEntries(
+    allowedFields.filter((field) => Object.hasOwn(req.body, field)).map((field) => [field, req.body[field]])
+  );
+  const stages = ["submitted", "under_review", "interviewing", "offer", "hired", "onboard", "rejected"];
+  if (updates.status !== undefined && !stages.includes(updates.status)) {
+    return res.status(400).json({ message: "Invalid candidate stage" });
+  }
+  if (updates.interviewScore !== undefined && updates.interviewScore !== "" &&
+      (!Number.isFinite(Number(updates.interviewScore)) || Number(updates.interviewScore) < 0 || Number(updates.interviewScore) > 100)) {
+    return res.status(400).json({ message: "Interview score must be between 0 and 100" });
+  }
+  if (updates.offerSalary !== undefined && updates.offerSalary !== "" &&
+      (!Number.isFinite(Number(updates.offerSalary)) || Number(updates.offerSalary) < 0)) {
+    return res.status(400).json({ message: "Offer salary must be a non-negative number" });
+  }
+  if (updates.interviewAt && Number.isNaN(new Date(updates.interviewAt).getTime())) {
+    return res.status(400).json({ message: "Interview date is invalid" });
+  }
+
+  referrals[referralIndex] = { ...referral, ...updates, updatedAt: new Date().toISOString() };
+  writeFile("referrals.json", referrals);
+  return res.json({ message: "Candidate updated", referral: referrals[referralIndex] });
 };
 
 
@@ -1171,15 +1291,16 @@ module.exports = {
     removeUser,
     doLogin,
     doRegister,
+    doRegisterFulltime,
     // Jobs
     getJobs,
     resetJobs,
     getJobById, saveJob, unsaveJob,
     getJobsByStatus, 
-    createJob, updateJob,
+    createJob, updateJob, createHiringManagerJob, updateHiringManagerJob,
     removeJob, updateUserStatus, getUserStatus,
     // Referrals
-    getReferrals,
+    getReferrals, getHiringManagerReferrals, updateHiringManagerReferral,
     resetReferrals,
     createReferral,
     removeReferral, updateReferral,

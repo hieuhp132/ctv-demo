@@ -30,16 +30,17 @@ const PAGE_SIZE = 10;
 const ADMIN_ROLES = [
   { id: "admin", label: "Admins", icon: ShieldCheck, description: "Full workspace access" },
   { id: "lower_admin", label: "Lower admins", icon: UserRoundCog, description: "Admin workspace, limited user access" },
-  { id: "recruiter", label: "Recruiters", icon: UserRoundCog, description: "Manage jobs and candidates" },
+  { id: "recruiter_freelancer", label: "Freelance recruiters", icon: UserRoundCog, description: "Refer candidates and track commissions" },
+  { id: "recruiter_fulltime", label: "Full-time recruiters", icon: UserRoundCog, description: "Manage hiring workflows and talent" },
   { id: "candidate", label: "Candidates", icon: UserRound, description: "Access candidate features" },
 ];
-const LOWER_ADMIN_ROLES = ADMIN_ROLES.filter(({ id }) => ["recruiter", "candidate"].includes(id));
+const LOWER_ADMIN_ROLES = ADMIN_ROLES.filter(({ id }) => ["recruiter_freelancer", "recruiter_fulltime", "candidate"].includes(id));
 const STATUSES = ["Active", "Pending", "Rejected"];
 const EMPTY_FORM = {
   name: "",
   email: "",
   password: "",
-  role: "recruiter",
+  role: "recruiter_freelancer",
   status: "Pending",
 };
 

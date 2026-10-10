@@ -3,6 +3,7 @@ const router = express.Router();
 const localCtrl = require("../controllers/local");
 const userManagement = require("../controllers/userManagement");
 const authMiddleware = require("../middlewares/auth");
+const recruiterRole = require("../middlewares/role");
 const adminOnly = require("../middlewares/admin");
 
 // ---------- USERS ----------
@@ -17,6 +18,7 @@ router.post("/users/reset", ...adminOnly, userManagement.resetPasswordByEmail);
 router.post("/users/forgot-password", localCtrl.forgotPassword);
 router.post("/login", localCtrl.doLogin);
 router.post("/register", localCtrl.doRegister);
+router.post("/register/recruiter-fulltime", localCtrl.doRegisterFulltime);
 router.post("/users", ...adminOnly, userManagement.createUser);
 router.delete("/users/:userId/remove", ...adminOnly, userManagement.deleteUser);
 router.post("/users/update-status", ...adminOnly, userManagement.updateStatus);
@@ -34,12 +36,16 @@ router.post("/jobs", localCtrl.createJob);
 router.delete("/jobs/:id/remove", localCtrl.removeJob);
 // To implement:
 router.put("/jobs/update/:id", localCtrl.updateJob);
+router.post("/recruiter-fulltime/jobs", authMiddleware, recruiterRole(["recruiter_fulltime"]), localCtrl.createHiringManagerJob);
+router.put("/recruiter-fulltime/jobs/:id", authMiddleware, recruiterRole(["recruiter_fulltime"]), localCtrl.updateHiringManagerJob);
 router.put("/jobs/:id/save", localCtrl.saveJob);
 router.put("/jobs/:id/unsave", localCtrl.unsaveJob);
 
 
 // ---------- REFERRALS ----------
 router.get("/referrals", localCtrl.getReferrals);
+router.get("/referrals/hiring-manager", authMiddleware, recruiterRole(["recruiter_fulltime"]), localCtrl.getHiringManagerReferrals);
+router.put("/referrals/hiring-manager/:id", authMiddleware, recruiterRole(["recruiter_fulltime"]), localCtrl.updateHiringManagerReferral);
 router.get("/referrals/reset", localCtrl.resetReferrals);
 router.post("/referrals", localCtrl.createReferral);
 router.delete("/referrals/:id/remove", localCtrl.removeReferral);

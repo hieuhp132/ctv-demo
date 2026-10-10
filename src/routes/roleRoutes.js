@@ -14,7 +14,7 @@ export const ROLE_ROUTES = {
   admin: adminRoutes,
   lower_admin: adminRoutes,
 
-  recruiter: {
+  recruiter_freelancer: {
     dashboard: "/recruiter/dashboard",
     profile: "/recruiter/profile",
     jobs: "/recruiter/jobs",
@@ -23,7 +23,15 @@ export const ROLE_ROUTES = {
     candidates: "/recruiter/candidates",
     notification: "/recruiter/notifications",
   },
+  recruiter_fulltime: {
+    dashboard: "/recruiter-fulltime",
+    jobs: "/recruiter-fulltime",
+    candidates: "/recruiter-fulltime",
+  },
 };
+
+// Keep active sessions and links created before the role rename working.
+ROLE_ROUTES.recruiter = ROLE_ROUTES.recruiter_freelancer;
 
 export const ROLE_NAV_ITEMS = {
   admin: [
@@ -40,10 +48,15 @@ export const ROLE_NAV_ITEMS = {
     { label: "Saved Jobs", path: adminRoutes.savedJobs },
     { label: "User Management", path: adminRoutes.users },
   ],
-  recruiter: [
-    { label: "Dashboard", path: ROLE_ROUTES.recruiter.dashboard },
-    { label: "Jobs", path: ROLE_ROUTES.recruiter.jobs },
-    { label: "My Candidates", path: ROLE_ROUTES.recruiter.candidates },
-    { label: "Saved Jobs", path: ROLE_ROUTES.recruiter.savedJobs },
+  recruiter_freelancer: [
+    { label: "Dashboard", path: ROLE_ROUTES.recruiter_freelancer.dashboard },
+    { label: "Jobs", path: ROLE_ROUTES.recruiter_freelancer.jobs },
+    { label: "My Candidates", path: ROLE_ROUTES.recruiter_freelancer.candidates },
+    { label: "Saved Jobs", path: ROLE_ROUTES.recruiter_freelancer.savedJobs },
+  ],
+  recruiter_fulltime: [
+    { label: "Recruitment workspace", path: ROLE_ROUTES.recruiter_fulltime.dashboard },
   ],
 };
+
+ROLE_NAV_ITEMS.recruiter = ROLE_NAV_ITEMS.recruiter_freelancer;

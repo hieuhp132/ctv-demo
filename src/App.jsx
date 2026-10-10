@@ -36,6 +36,7 @@ import RecrSavedJobs from "./pages/recruiter/jobs/Saved";
 import RecrCandidates from "./pages/recruiter/candidates_tracker/Candidates";
 import RecrNotification from "./pages/recruiter/notifications/Notification";
 import RecruiterWorkspace from "./pages/recruiter/dashboard/RecruiterWorkspace";
+import RecruiterFulltimeWorkspace from "./pages/recruiter/fulltime/RecruiterFulltimeWorkspace";
 import Update from "./pages/update/Update";
 import TermsPage from "./pages/terms/Terms";
 
@@ -84,6 +85,7 @@ function AppRoutes() {
         <Route path="/" element={<NewHome />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/signup/recruiter-fulltime" element={<SignUp recruiterType="fulltime" />} />
         <Route path="/pending" element={<Pending />} />
         <Route path="/dashboard" element={<DashboardRedirect />} />
         <Route path="/notifications/update" element={<Update />} />
@@ -105,33 +107,37 @@ function AppRoutes() {
         </Route>
 
         {/* RECRUITER */}
-        <Route element={<PrivateRoute roles={["recruiter"]} />}>
-          <Route path="/recruiter" element={<Navigate to={ROLE_ROUTES.recruiter.dashboard} replace />} />
+        <Route element={<PrivateRoute roles={["recruiter", "recruiter_freelancer"]} />}>
+          <Route path="/recruiter" element={<Navigate to={ROLE_ROUTES.recruiter_freelancer.dashboard} replace />} />
           <Route
-            path={ROLE_ROUTES.recruiter.dashboard}
+            path={ROLE_ROUTES.recruiter_freelancer.dashboard}
             element={<RecruiterWorkspace />}
           />
           <Route
-            path={ROLE_ROUTES.recruiter.profile}
+            path={ROLE_ROUTES.recruiter_freelancer.profile}
             element={<RecrProfile />}
           />
           <Route
-            path={ROLE_ROUTES.recruiter.jobs}
+            path={ROLE_ROUTES.recruiter_freelancer.jobs}
             element={<RecrJobsList />}
           />
           <Route
-            path={ROLE_ROUTES.recruiter.jobDetail}
+            path={ROLE_ROUTES.recruiter_freelancer.jobDetail}
             element={<RecrJobDetail />}
           />
           <Route
-            path={ROLE_ROUTES.recruiter.savedJobs}
+            path={ROLE_ROUTES.recruiter_freelancer.savedJobs}
             element={<RecrSavedJobs />}
           />
           <Route
-            path={ROLE_ROUTES.recruiter.candidates}
+            path={ROLE_ROUTES.recruiter_freelancer.candidates}
             element={<RecrCandidates />}
           />
-          <Route path={ROLE_ROUTES.recruiter.notification} element={<RecrNotification />} />
+          <Route path={ROLE_ROUTES.recruiter_freelancer.notification} element={<RecrNotification />} />
+        </Route>
+
+        <Route element={<PrivateRoute roles={["recruiter_fulltime"]} />}>
+          <Route path="/recruiter-fulltime" element={<RecruiterFulltimeWorkspace />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

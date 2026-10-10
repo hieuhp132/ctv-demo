@@ -8,7 +8,7 @@ exports.balances = async (req, res) => {
     const adminCredit = admin ? admin.credit : 0;
 
     // Lấy bonus của từng recruiter từ trường credit
-    const recruiters = await User.find({ role: "recruiter" });
+    const recruiters = await User.find({ role: { $in: ["recruiter", "recruiter_freelancer"] } });
     const ctvBonusById = {};
     for (const r of recruiters) {
       ctvBonusById[String(r._id)] = r.credit || 0;
@@ -19,7 +19,6 @@ exports.balances = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 
 

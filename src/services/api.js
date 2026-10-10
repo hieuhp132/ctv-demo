@@ -21,6 +21,14 @@ export async function getUsersListL() {
   return Array.isArray(users) ? users : [];
 }
 
+export async function fetchAllJobsStrict() {
+  const res = await fetch(`${API_BASE}/local/jobs`);
+  if (!res.ok) throw new Error("Failed to load job openings.");
+  const data = await res.json();
+  if (!Array.isArray(data.jobs)) throw new Error("The jobs response was invalid.");
+  return data.jobs;
+}
+
 export async function saveJobL(jobId, userId) {
   const res = await fetch(`${API_BASE}/local/jobs/${jobId}/save`, {
     method: "PUT",
@@ -128,7 +136,9 @@ async function adminUsersRequest(path = "", options = {}) {
 
 export async function getAdminUsersL() {
   const data = await adminUsersRequest();
-  return data.data;
+  return data.data.map((user) =>
+    user.role === "recruiter" ? { ...user, role: "recruiter_freelancer" } : user
+  );
 }
 
 export async function createAdminUserL(user) {
@@ -198,6 +208,7 @@ export async function createJobL(job) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(job),
   });
+  if (!res.ok) throw new Error("Failed to create job.");
   const created = await res.json();
   return created;
 }
@@ -209,8 +220,43 @@ export async function updateJobL(updated) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+  if (!res.ok) throw new Error("Failed to update job.");
   const saved = await res.json();
   return saved;
+}
+
+async function fulltimeRecruiterRequest(path, options) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+      ...options.headers,
+    },
+  });
+  const responseText = await res.text();
+  let data;
+  try {
+    data = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    throw new Error(`Recruiter workspace returned an invalid response (HTTP ${res.status}).`);
+  }
+  if (!res.ok) throw new Error(data.message || "Recruiter workspace request failed.");
+  return data;
+}
+
+export async function createHiringManagerJobL(job) {
+  return fulltimeRecruiterRequest("/local/recruiter-fulltime/jobs", {
+    method: "POST",
+    body: JSON.stringify(job),
+  });
+}
+
+export async function updateHiringManagerJobL(id, updates) {
+  return fulltimeRecruiterRequest(`/local/recruiter-fulltime/jobs/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(updates),
+  });
 }
 
 export async function deleteJobL(id) {
@@ -253,14 +299,19 @@ export async function lregister({
   name,
   email,
   password,
+  company,
   promoCode = null,
   fromSupabase,
+  recruiterType = "freelancer",
 }) {
   try {
-    const res = await fetch(`${API_BASE}/local/register`, {
+    const registrationPath = recruiterType === "fulltime"
+      ? "/local/register/recruiter-fulltime"
+      : "/local/register";
+    const res = await fetch(`${API_BASE}${registrationPath}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, promoCode, fromSupabase }),
+      body: JSON.stringify({ name, email, password, company, promoCode, fromSupabase }),
     });
 
     const data = await res.json();
@@ -308,8 +359,22 @@ export async function listReferrals({
   jobId,
   q,
   finalized,
+  isHiringManager = false,
+  jobIds = [],
 } = {}) {
   if (!id && !email) return [];
+
+  if (isHiringManager) {
+    const managerParams = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (status) managerParams.set("status", status);
+    if (q) managerParams.set("q", q);
+    const res = await fetch(`${API_BASE}/local/referrals/hiring-manager?${managerParams.toString()}`, {
+      headers: authHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to load the candidate pipeline.");
+    const data = await res.json();
+    return Array.isArray(data.items) ? data.items : [];
+  }
 
   const params = new URLSearchParams({
     isAdmin: String(isAdmin),
@@ -326,14 +391,22 @@ export async function listReferrals({
   if (finalized !== undefined) {
     params.set("finalized", String(finalized));
   }
+  if (jobIds.length) params.set("jobIds", jobIds.join(","));
 
   const res = await fetch(`${API_BASE}/local/referrals?${params.toString()}`);
 
-  if (!res.ok) return [];
+  if (!res.ok) throw new Error("Failed to load the candidate pipeline.");
 
   const data = await res.json();
   // console.log("listReferrals data:", data);
   return Array.isArray(data.items) ? data.items : [];
+}
+
+export async function updateHiringManagerReferralL(id, updates) {
+  return fulltimeRecruiterRequest(`/local/referrals/hiring-manager/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(updates),
+  });
 }
 
 export async function fetchAdminReferrals(adminId, email) {

@@ -151,7 +151,7 @@ export default function RecruiterWorkspace() {
         <header className="recruiter-welcome">
           <Ambient3DObject className="ambient-3d-object--recruiter" />
           <div>
-            <span className="recruiter-eyebrow">RECRUITER WORKSPACE</span>
+            <span className="recruiter-eyebrow">FREELANCE RECRUITER WORKSPACE</span>
             <h1>Good to see you, {user?.name?.split(" ")[0] || "Recruiter"}</h1>
             <p>Manage your referrals, track commissions, and find your next opportunity.</p>
           </div>

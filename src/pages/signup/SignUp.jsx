@@ -5,11 +5,14 @@ import { Eye, EyeOff, TrendingUp, UserPlus, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { lregister } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 
-const SignUp = ({ onSignup }) => {
+const SignUp = ({ recruiterType = "freelancer" }) => {
+  const isFulltimeRecruiter = recruiterType === "fulltime";
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [company, setCompany] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -18,6 +21,7 @@ const SignUp = ({ onSignup }) => {
   const [isShaking, setIsShaking] = useState(false);
   const [serverMessage, setServerMessage] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const triggerShake = () => {
     setIsShaking(true);
@@ -31,6 +35,11 @@ const SignUp = ({ onSignup }) => {
 
     if (!name.trim()) {
       setError("Please enter your name");
+      triggerShake();
+      return;
+    }
+    if (isFulltimeRecruiter && !company.trim()) {
+      setError("Please enter your company name");
       triggerShake();
       return;
     }
@@ -57,10 +66,12 @@ const SignUp = ({ onSignup }) => {
         name: name.trim(),
         email: email.trim(),
         password,
+        company: company.trim(),
         promoCode: promoCode || null,
+        recruiterType,
       });
-      console.log(response);
       localStorage.setItem("pendingEmail", email.trim());
+      login(response.user);
       navigate("/pending");
       e.target.reset();
     } catch (err) {
@@ -97,11 +108,13 @@ const SignUp = ({ onSignup }) => {
             <div className="mb-10">
 
               <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
-                Create Account
+                {isFulltimeRecruiter ? "Join as a Full-time Recruiter" : "Create Account"}
               </h1>
 
               <p className="text-white/60 text-sm">
-                Join AntTech ATS and start managing talent globally
+                {isFulltimeRecruiter
+                  ? "Create your hiring workspace and manage recruitment end to end."
+                  : "Join AntTech ATS and start managing talent globally"}
               </p>
             </div>
 
@@ -131,6 +144,22 @@ const SignUp = ({ onSignup }) => {
                   placeholder="John Doe"
                 />
               </div>
+
+              {isFulltimeRecruiter && (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold text-white/40 tracking-wider ml-1">
+                    Company name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={company}
+                    onChange={(event) => setCompany(event.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white outline-none"
+                    placeholder="Your organization"
+                  />
+                </div>
+              )}
 
               {/* Email */}
               <div className="space-y-1.5">
@@ -201,8 +230,8 @@ const SignUp = ({ onSignup }) => {
                 </div>
               </div>
 
-              {/* Promocode */}
-              <div className="space-y-1.5 mt-2">
+              {/* Freelancer referral code */}
+              {!isFulltimeRecruiter && <div className="space-y-1.5 mt-2">
                 <label className="text-[10px] uppercase font-bold text-white/40 tracking-wider ml-1">
                   Promo Code (Optional)
                 </label>
@@ -214,7 +243,7 @@ const SignUp = ({ onSignup }) => {
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white outline-none"
                   placeholder="Enter referral code"
                 />
-              </div>
+              </div>}
 
               {/* Submit */}
               <button
@@ -225,7 +254,7 @@ const SignUp = ({ onSignup }) => {
                 {isSubmitting ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
-                  "CREATE ACCOUNT"
+                  isFulltimeRecruiter ? "CREATE RECRUITER ACCOUNT" : "CREATE ACCOUNT"
                 )}
               </button>
             </form>
@@ -238,6 +267,16 @@ const SignUp = ({ onSignup }) => {
                   className="text-white font-medium hover:underline"
                 >
                   Log in
+                </button>
+              </p>
+              <p className="text-white/40 text-xs mt-4">
+                {isFulltimeRecruiter ? "Joining as a freelancer? " : "Hiring for a company? "}
+                <button
+                  onClick={() => navigate(isFulltimeRecruiter ? "/signup" : "/signup/recruiter-fulltime")}
+                  className="text-white font-medium hover:underline"
+                  type="button"
+                >
+                  {isFulltimeRecruiter ? "Register as recruiter freelancer" : "Register as recruiter full-time"}
                 </button>
               </p>
             </div>
@@ -256,7 +295,9 @@ const SignUp = ({ onSignup }) => {
             </h2>
 
             <p className="text-white/40 text-lg max-w-xs mx-auto">
-              Access a global pool of elite talent and streamline your hiring process.
+              {isFulltimeRecruiter
+                ? "Build your hiring pipeline, nurture talent and deliver better candidate experiences."
+                : "Access a global pool of elite talent and streamline your hiring process."}
             </p>
           </div>
 

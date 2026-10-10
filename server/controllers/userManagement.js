@@ -2,7 +2,7 @@ const { randomUUID } = require("crypto");
 const bcrypt = require("bcrypt");
 const { readFile, writeFile } = require("../utils/fileStore");
 
-const VALID_ROLES = ["admin", "lower_admin", "recruiter", "candidate"];
+const VALID_ROLES = ["admin", "lower_admin", "recruiter", "recruiter_freelancer", "recruiter_fulltime", "candidate"];
 const VALID_STATUSES = ["Pending", "Active", "Rejected"];
 const isFullAdmin = (admin) => admin.role === "admin";
 const canManageTarget = (admin, user) =>
@@ -31,7 +31,7 @@ const createUser = async (req, res) => {
   const name = String(req.body.name || "").trim();
   const email = String(req.body.email || "").trim().toLowerCase();
   const password = String(req.body.password || "");
-  const role = req.body.role || "recruiter";
+  const role = req.body.role || "recruiter_freelancer";
   const status = req.body.status || "Pending";
 
   if (!name || name.length > 100) {
@@ -46,7 +46,7 @@ const createUser = async (req, res) => {
   if (!VALID_ROLES.includes(role)) {
     return res.status(400).json({ success: false, message: "Invalid role" });
   }
-  if (!isFullAdmin(req.admin) && !["recruiter", "candidate"].includes(role)) {
+  if (!isFullAdmin(req.admin) && !["recruiter", "recruiter_freelancer", "recruiter_fulltime", "candidate"].includes(role)) {
     return res.status(403).json({ success: false, message: "Lower admins can only create recruiter or candidate accounts" });
   }
   if (!VALID_STATUSES.includes(status)) {
@@ -86,7 +86,7 @@ const updateRole = (req, res) => {
   if (!VALID_ROLES.includes(role)) {
     return res.status(400).json({ success: false, message: "Invalid role" });
   }
-  if (!isFullAdmin(req.admin) && !["recruiter", "candidate"].includes(role)) {
+  if (!isFullAdmin(req.admin) && !["recruiter", "recruiter_freelancer", "recruiter_fulltime", "candidate"].includes(role)) {
     return res.status(403).json({ success: false, message: "Lower admins can only assign recruiter or candidate roles" });
   }
 

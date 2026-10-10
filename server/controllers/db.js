@@ -94,7 +94,7 @@ exports.resetUsers = async (req, res) => {
             email: "ctv1@example.com",
             password: "1234567891011AAa!",
             credit: 500,
-            role: "recruiter",
+            role: "recruiter_freelancer",
             paymentMethod: "paypal",
         }
     ];
@@ -227,6 +227,10 @@ exports.doLogin = async (req, res) => {
         }
 
         console.log('Login successful:', user._id);
+        if (user.role === "recruiter") {
+            user.role = "recruiter_freelancer";
+            await user.save();
+        }
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
             expiresIn: "1d",
         });       
@@ -255,7 +259,11 @@ exports.oauthLogin = async (req, res) => {
         let user = await User.findOne({ email });
         if (!user) {
             const randomPassword = generateRandomPassword(20);
-            user = new User({ name: name || "", email, password: randomPassword, role: "recruiter" });
+            user = new User({ name: name || "", email, password: randomPassword, role: "recruiter_freelancer" });
+            await user.save();
+        }
+        if (user.role === "recruiter") {
+            user.role = "recruiter_freelancer";
             await user.save();
         }
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });

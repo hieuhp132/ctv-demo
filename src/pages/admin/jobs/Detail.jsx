@@ -22,7 +22,7 @@ import { createPDF } from "../../../utils/createPDF.js";
 export default function JobDetail() {
   const { id } = useParams();
   const { user } = useAuth();
-  const isCTV = user?.role === "recruiter";
+  const isCTV = ["recruiter", "recruiter_freelancer"].includes(user?.role);
   const isAdmin = ["admin", "lower_admin"].includes(user?.role);
   const recruiterId = useMemo(() => user?.email || user?.id, [user]);
 

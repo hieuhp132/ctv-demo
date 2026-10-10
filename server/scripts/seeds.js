@@ -36,7 +36,7 @@ async function seed() {
       name: "This Is Me",
       email: "ctv1@example.com",
       password: recruiterPassword,
-      role: "recruiter",
+      role: "recruiter_freelancer",
       connections: [admin._id],
     });
 

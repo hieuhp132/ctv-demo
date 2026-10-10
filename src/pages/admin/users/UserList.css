@@ -164,6 +164,13 @@
   color: #b58af2;
 }
 
+.um-stat-card__icon--recruiter_freelancer,
+.um-stat-card__icon--recruiter_fulltime {
+  border-color: rgba(118, 41, 209, 0.28);
+  background: rgba(118, 41, 209, 0.13);
+  color: #b58af2;
+}
+
 .um-stat-card__icon--candidate {
   border-color: rgba(30, 184, 127, 0.25);
   background: rgba(30, 184, 127, 0.1);
@@ -474,6 +481,11 @@
 }
 
 .um-role-select--recruiter {
+  color: #b58af2;
+}
+
+.um-role-select--recruiter_freelancer,
+.um-role-select--recruiter_fulltime {
   color: #b58af2;
 }
 
