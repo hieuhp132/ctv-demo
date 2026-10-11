@@ -35,6 +35,19 @@ const PAGE_SIZE = 10;
 const paginate = (data, page) =>
   data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+const parseCommissionAmount = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const match = String(value).match(/[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?/);
+  if (!match) return null;
+  const amount = Number(match[0].replace(/,/g, ""));
+  return Number.isFinite(amount) ? amount : null;
+};
+
+const commissionInputValue = (value) => {
+  const amount = parseCommissionAmount(value);
+  return amount === null ? "" : String(amount);
+};
+
 // Track downloaded CVs to support incremental downloads
 const STORAGE_KEY_DOWNLOADED = "downloadedCVs_v1";
 function readDownloadedMap() {
@@ -190,6 +203,8 @@ export default function CandidateManagement() {
   const [jobMap, setJobMap] = useState({});
   const [recruiterMap, setRecruiterMap] = useState({});
   const [localStatuses, setLocalStatuses] = useState({});
+  const [localBonuses, setLocalBonuses] = useState({});
+  const [savingReferralId, setSavingReferralId] = useState("");
   const [zipping, setZipping] = useState(false);
   const [zipProgress, setZipProgress] = useState(0);
   const [zipAdded, setZipAdded] = useState(0);
@@ -378,18 +393,34 @@ export default function CandidateManagement() {
     setLocalStatuses((p) => ({ ...p, [id]: value }));
 
   const handleUpdate = async (id) => {
-    if (!window.confirm("Update candidate status?")) return;
+    const referral = rows.find((row) => row._id === id);
+    const bonusValue = localBonuses[id] ?? referral?.bonus ?? "";
+    const parsedBonus = parseCommissionAmount(bonusValue);
+    if (parsedBonus === null || parsedBonus < 0) {
+      window.alert("Commission must be a valid non-negative amount.");
+      return;
+    }
+    if (!window.confirm("Update candidate status and commission?")) return;
 
     const newStatus = localStatuses[id];
     const now = new Date().toISOString();
 
-    await updateReferralFieldsById(id, { status: newStatus });
-
-    setRows((p) =>
-      p.map((r) =>
-        r._id === id ? { ...r, status: newStatus, updatedAt: now } : r,
-      ),
-    );
+    setSavingReferralId(id);
+    try {
+      await updateReferralFieldsById(id, { status: newStatus, bonus: parsedBonus });
+      setRows((p) =>
+        p.map((r) =>
+          r._id === id
+            ? { ...r, status: newStatus, bonus: parsedBonus, updatedAt: now }
+            : r,
+        ),
+      );
+      setLocalBonuses((current) => ({ ...current, [id]: String(parsedBonus) }));
+    } catch (error) {
+      window.alert(error.message || "Unable to update candidate commission.");
+    } finally {
+      setSavingReferralId("");
+    }
   };
 
   const handleRemove = async (id) => {
@@ -583,6 +614,7 @@ export default function CandidateManagement() {
               <th className="px-5 py-4 font-semibold text-gray-600">CV</th>
               <th className="px-5 py-4 font-semibold text-gray-600">Links</th>
               <th className="px-5 py-4 font-semibold text-gray-600">Status</th>
+              <th className="px-5 py-4 font-semibold text-gray-600">Commission (Bonus)</th>
               <th className="px-5 py-4 font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort("updatedAt")}>
                 <div className="flex items-center gap-2">Time <span className="text-gray-400">{sortIcon("updatedAt")}</span></div>
               </th>
@@ -632,6 +664,24 @@ export default function CandidateManagement() {
                     ))}
                   </select>
                 </td>
+                <td className="px-5 py-4">
+                  <label className="sr-only" htmlFor={`candidate-commission-${r._id}`}>
+                    Commission for {r.candidateName || "candidate"}
+                  </label>
+                  <input
+                    id={`candidate-commission-${r._id}`}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className="w-28 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    value={localBonuses[r._id] ?? commissionInputValue(r.bonus)}
+                    onChange={(event) => setLocalBonuses((current) => ({
+                      ...current,
+                      [r._id]: event.target.value,
+                    }))}
+                    aria-label={`Commission bonus for ${r.candidateName || "candidate"}`}
+                  />
+                </td>
                 <td className="px-5 py-4 text-xs text-gray-500 font-medium">
                   {new Date(r.updatedAt || r.createdAt).toLocaleString("vi-VN", {
                     hour: '2-digit', minute: '2-digit',
@@ -640,8 +690,8 @@ export default function CandidateManagement() {
                 </td>
                 <td className="px-5 py-4 text-right">
                   <div className="flex justify-end gap-2">
-                    <button onClick={() => handleUpdate(r._id)} className="candidate-row-save px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">
-                      Save
+                    <button onClick={() => handleUpdate(r._id)} disabled={savingReferralId === r._id} className="candidate-row-save px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-50">
+                      {savingReferralId === r._id ? "Saving…" : "Save"}
                     </button>
                     <button onClick={() => handleRemove(r._id)} className="candidate-row-delete px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">
                       Delete
@@ -652,7 +702,7 @@ export default function CandidateManagement() {
             ))}
             {!data.length && (
               <tr>
-                <td colSpan="9">
+                <td colSpan="10">
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
                       <i data-lucide="inbox" className="w-6 h-6 text-gray-400"></i>
@@ -702,7 +752,7 @@ export default function CandidateManagement() {
       "Job Salary": jobMap[r.job]?.salary || "",
       "CTV Email": recruiterMap[r.recruiter]?.email || r.recruiter || "",
       Status: r.status,
-      Bonus: r.bonus ?? "",
+      "Commission (Bonus)": r.bonus ?? "",
       "CV Link": r.cvUrl || "",
       LinkedIn: r.linkedin || "",
       Portfolio: r.portfolio || "",

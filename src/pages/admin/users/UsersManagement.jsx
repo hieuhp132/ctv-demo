@@ -61,6 +61,15 @@ const formatDate = (date) => {
     ? "—"
     : parsed.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 };
+const formatCommission = (amount) => {
+  const value = Number(amount);
+  if (!Number.isFinite(value) || value <= 0) return "$0";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2,
+  }).format(value);
+};
 const getUpdatedDate = (user) => user.updatedAt || user.createdAt;
 
 export default function UsersManagement() {
@@ -221,6 +230,9 @@ export default function UsersManagement() {
       Email: user.email || "",
       Role: getRoleLabel(user.role),
       Status: user.status || "",
+      "Commission earned": ["recruiter", "recruiter_freelancer"].includes(user.role)
+        ? Number(user.commissionEarned) || 0
+        : "",
       "Updated at": formatDate(getUpdatedDate(user)),
       "Bank account holder": user.bankInfo?.accountHolderName || "",
       "Bank": user.bankInfo?.bankName || "",
@@ -430,13 +442,14 @@ export default function UsersManagement() {
                 <th scope="col">User</th>
                 <th scope="col">Role &amp; access</th>
                 <th scope="col">Status</th>
+                <th scope="col">Commission earned</th>
                 <th scope="col">Updated</th>
                 <th scope="col"><span className="um-sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td className="um-table__message" colSpan="5">Loading users…</td></tr>
+                <tr><td className="um-table__message" colSpan="6">Loading users…</td></tr>
               ) : pageUsers.length ? pageUsers.map((user) => {
                 const isBusy = busyUserId === user._id;
                 const isCurrentUser = String(currentUser?._id) === String(user._id);
@@ -485,6 +498,11 @@ export default function UsersManagement() {
                         {STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
                       </select>
                     </td>
+                    <td className="um-commission-earned">
+                      {["recruiter", "recruiter_freelancer"].includes(user.role)
+                        ? formatCommission(user.commissionEarned)
+                        : "—"}
+                    </td>
                     <td className="um-date">{formatDate(getUpdatedDate(user))}</td>
                     <td className="um-row-actions">
                       <button
@@ -526,7 +544,7 @@ export default function UsersManagement() {
                 );
               }) : (
                 <tr>
-                  <td className="um-table__message" colSpan="5">
+                  <td className="um-table__message" colSpan="6">
                     {loadError ? "Users could not be loaded." : "No users match your search."}
                   </td>
                 </tr>

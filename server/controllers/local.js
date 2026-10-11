@@ -62,7 +62,7 @@ const updateUserStatus = async (req, res) => {
         // Chỉ chấp nhận các trạng thái hợp lệ
         const validStatuses = ["Pending", "Active", "Rejected"];
         if (!validStatuses.includes(newStatus)) {
-hượp l            return res.status(400).json({ success: false, message: "Invalid status" });
+            return res.status(400).json({ success: false, message: "Invalid status" });
         }
 
         const users = readFile("users.json");
@@ -1181,7 +1181,11 @@ const createReferral = (req, res) => {
       portfolio: portfolio || "",
       suitability: suitability || "",
 
-      bonus: Number(bonus) || 0,
+      bonus: (() => {
+        const match = String(bonus ?? "").match(/[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?/);
+        const amount = match ? Number(match[0].replace(/,/g, "")) : 0;
+        return Number.isFinite(amount) ? amount : 0;
+      })(),
       message: message || "",
 
       status: "submitted",
@@ -1248,6 +1252,14 @@ const updateReferral = (req, res) => {
   let referrals = readFile("referrals.json");
   const index = referrals.findIndex(r => r._id === id);
   if (index === -1) return res.status(404).json({ message: "Referral not found" });
+
+  if (Object.hasOwn(updates, "bonus")) {
+    const bonus = Number(String(updates.bonus ?? "").replace(/[, ]/g, ""));
+    if (!Number.isFinite(bonus) || bonus < 0) {
+      return res.status(400).json({ message: "Commission must be a valid non-negative amount" });
+    }
+    updates.bonus = bonus;
+  }
 
   const oldReferral = referrals[index];
   referrals[index] = { ...referrals[index], ...updates, updatedAt: new Date().toISOString() };

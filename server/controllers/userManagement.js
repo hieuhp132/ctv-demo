@@ -14,17 +14,62 @@ const readUsers = () => {
   return Array.isArray(users) ? users : [];
 };
 
+const parseCommission = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const match = String(value).match(/[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?/);
+  if (!match) return null;
+  const amount = Number(match[0].replace(/,/g, ""));
+  return Number.isFinite(amount) ? amount : null;
+};
+
+const getCommissionEarnedByRecruiter = (users) => {
+  const recruiters = users.filter((user) =>
+    ["recruiter", "recruiter_freelancer"].includes(user.role)
+  );
+  const recruiterKeys = new Map();
+  recruiters.forEach((user) => {
+    const keys = [user._id || user.id, user.email]
+      .filter(Boolean)
+      .map((key) => String(key).toLowerCase());
+    keys.forEach((key) => recruiterKeys.set(key, user._id || user.id));
+  });
+
+  const earned = new Map(recruiters.map((user) => [String(user._id || user.id), 0]));
+  const referrals = readFile("referrals.json");
+
+  if (!Array.isArray(referrals)) return earned;
+  referrals.forEach((referral) => {
+    if (!["hired", "onboard"].includes(String(referral.status || "").toLowerCase())) return;
+    const recruiterValue = referral.recruiter && typeof referral.recruiter === "object"
+      ? referral.recruiter._id || referral.recruiter.id || referral.recruiter.email
+      : referral.recruiter;
+    const recruiterId = recruiterKeys.get(String(recruiterValue || "").toLowerCase());
+    if (!recruiterId) return;
+
+    const amount = parseCommission(referral.bonus);
+    if (amount === null || amount <= 0) return;
+
+    earned.set(String(recruiterId), (earned.get(String(recruiterId)) || 0) + amount);
+  });
+  return earned;
+};
+
 const getUsers = (req, res) => {
-  const users = readUsers()
+  const users = readUsers();
+  const commissionEarned = getCommissionEarnedByRecruiter(users);
+  const visibleUsers = users
     .filter((user) => canManageTarget(req.admin, user))
     .sort(
       (left, right) =>
         new Date(right.createdAt || right.updatedAt || 0) -
         new Date(left.createdAt || left.updatedAt || 0)
     )
-    .map(toSafeUser);
+    .map((user) => ({
+      ...toSafeUser(user),
+      commissionEarned: commissionEarned.get(String(user._id || user.id)) ?? 0,
+    }));
 
-  res.json({ success: true, data: users });
+  res.json({ success: true, data: visibleUsers });
 };
 
 const createUser = async (req, res) => {

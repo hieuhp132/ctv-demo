@@ -20,23 +20,18 @@ const PIPELINE_STAGES = [
 const stageLabel = (status) =>
   String(status || "submitted").replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
-function getAmount(referral, jobById = {}) {
+function getAmount(referral) {
   const parseAmount = (value) => {
     if (value === null || value === undefined || value === "" || value === "-") return null;
-    const amount = Number(String(value).replace(/[^0-9.-]/g, ""));
+    const match = String(value).match(/[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?/);
+    if (!match) return null;
+    const amount = Number(match[0].replace(/,/g, ""));
     return Number.isFinite(amount) ? amount : null;
   };
   const referralAmount = parseAmount(
     referral?.bonus ?? referral?.commissionAmount ?? referral?.estimatedCommission ?? referral?.commission?.amount
   );
-  if (referralAmount > 0) return referralAmount;
-  const job = (referral?.job && typeof referral.job === "object"
-    ? referral.job
-    : jobById[String(referral?.jobId || referral?.job)]) || {};
-  const configuredAmounts = [job.rewardCandidateUSD, job.bonus]
-    .map(parseAmount)
-    .filter((amount) => amount !== null);
-  return configuredAmounts.find((amount) => amount > 0) ?? referralAmount ?? configuredAmounts[0] ?? null;
+  return referralAmount;
 }
 
 const formatCurrency = (amount) =>
@@ -120,11 +115,6 @@ export default function RecruiterWorkspace() {
     }).slice(0, 4);
   }, [jobs]);
 
-  const jobsById = useMemo(
-    () => Object.fromEntries(jobs.map((job) => [String(job._id || job.id), job])),
-    [jobs]
-  );
-
   const filteredReferrals = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return referrals.filter((referral) => {
@@ -151,19 +141,19 @@ export default function RecruiterWorkspace() {
       ["submitted", "under_review", "interviewing", "offer"].includes(String(referral.status || "").toLowerCase())
     );
     const totalFor = (items) => items.reduce((total, referral) => {
-      const amount = getAmount(referral, jobsById);
+      const amount = getAmount(referral);
       return amount === null ? total : total + amount;
     }, 0);
 
     return {
-      confirmedCount: confirmed.filter((referral) => getAmount(referral, jobsById) !== null).length,
+      confirmedCount: confirmed.filter((referral) => getAmount(referral) !== null).length,
       confirmedAmount: totalFor(confirmed),
-      inProgressCount: inProgress.filter((referral) => getAmount(referral, jobsById) !== null).length,
+      inProgressCount: inProgress.filter((referral) => getAmount(referral) !== null).length,
       inProgressAmount: totalFor(inProgress),
       placements: confirmed.length,
       placementRate: referrals.length ? Math.round((confirmed.length / referrals.length) * 100) : 0,
     };
-  }, [referrals, jobsById]);
+  }, [referrals]);
 
   return (
     <main className="recruiter-workspace">
@@ -283,7 +273,7 @@ export default function RecruiterWorkspace() {
                   const candidateName = referral.candidateName || "Unnamed candidate";
                   const initials = candidateName.split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase();
                   const referralDate = referral.createdAt ? new Date(referral.createdAt) : null;
-                  const amount = getAmount(referral, jobsById);
+                  const amount = getAmount(referral);
                   return (
                     <tr key={referral._id || referral.id || `${candidateName}-${index}`}>
                       <td>

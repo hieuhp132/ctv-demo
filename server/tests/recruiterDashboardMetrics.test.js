@@ -60,7 +60,7 @@ describe("recruiter dashboard metrics", () => {
     expect(response.body).toEqual({
       referralCredits: 5,
       toReview: 2,
-      confirmedAmount: 750,
+      confirmedAmount: 450,
       inProgressAmount: 300,
     });
     expect(Referral.find).not.toHaveBeenCalled();
@@ -76,13 +76,11 @@ describe("recruiter dashboard metrics", () => {
     });
     Referral.find.mockReturnValue({
       select: () => ({
-        populate: () => ({
-          lean: async () => [
-            { status: "submitted", bonus: 100 },
-            { status: "onboard", bonus: 0, job: { rewardCandidateUSD: 700 } },
-            { status: "onboard", bonus: 250, finalized: true },
-          ],
-        }),
+        lean: async () => [
+          { status: "submitted", bonus: 100 },
+          { status: "onboard", bonus: 0 },
+          { status: "onboard", bonus: 250, finalized: true },
+        ],
       }),
     });
 
@@ -93,7 +91,7 @@ describe("recruiter dashboard metrics", () => {
     expect(response.body).toEqual({
       referralCredits: 3,
       toReview: 1,
-      confirmedAmount: 950,
+      confirmedAmount: 250,
       inProgressAmount: 100,
     });
   });

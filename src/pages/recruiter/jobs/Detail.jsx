@@ -123,7 +123,7 @@ export default function JobDetail() {
 
       await createSubmissionL({
         jobId: id, recruiterId, ...candidateForm,
-        cvUrl: res.publicUrl, bonus: job.rewardCandidateUSD || job.bonus || 0,
+        cvUrl: res.publicUrl,
       });
 
       alert("Candidate submitted successfully!");

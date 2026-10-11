@@ -23,21 +23,15 @@ const PAGE_SIZE = 10;
 const paginate = (data, page) =>
   data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-const getReferralCommission = (referral, jobMap) => {
+const getReferralCommission = (referral) => {
   const parseAmount = (value) => {
     if (value === null || value === undefined || value === "" || value === "-") return null;
-    const amount = Number(String(value).replace(/[^0-9.-]/g, ""));
+    const match = String(value).match(/[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?/);
+    if (!match) return null;
+    const amount = Number(match[0].replace(/,/g, ""));
     return Number.isFinite(amount) ? amount : null;
   };
-  const referralAmount = parseAmount(referral.bonus);
-  if (referralAmount > 0) return referralAmount;
-
-  const jobId = typeof referral.job === "object" ? referral.job?._id : referral.job;
-  const job = (typeof referral.job === "object" ? referral.job : null) || jobMap[jobId] || {};
-  const configuredAmounts = [job.rewardCandidateUSD, job.bonus]
-    .map(parseAmount)
-    .filter((amount) => amount !== null);
-  return configuredAmounts.find((amount) => amount > 0) ?? referralAmount ?? configuredAmounts[0] ?? null;
+  return parseAmount(referral.bonus);
 }
 
 const formatCommission = (amount) =>
@@ -252,7 +246,7 @@ function CandidateTable({ title, rows, jobMap }) {
                       "-"
                     )}
                   </td>
-                  <td className="px-5 py-4 text-gray-600 font-semibold">{formatCommission(getReferralCommission(c, jobMap))}</td>
+                  <td className="px-5 py-4 text-gray-600 font-semibold">{formatCommission(getReferralCommission(c))}</td>
                   <td className="px-5 py-4 text-gray-600">{c.candidateEmail || "-"}</td>
                   <td className="px-5 py-4 text-gray-600">{c.candidatePhone || "-"}</td>
 

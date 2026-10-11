@@ -520,6 +520,12 @@
   white-space: nowrap;
 }
 
+.um-commission-earned {
+  color: var(--app-text) !important;
+  font-weight: 720;
+  white-space: nowrap;
+}
+
 .um-row-actions {
   min-width: 124px;
   display: flex;

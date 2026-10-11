@@ -94,6 +94,38 @@ describe("admin user management API", () => {
       .expect(403);
   });
 
+  test("includes only confirmed referral bonuses in recruiter commission earned", async () => {
+    const recruiter = {
+      _id: "recruiter-1",
+      name: "Recruiter",
+      email: "recruiter@example.com",
+      password: "recruiter-hash",
+      role: "recruiter",
+      status: "Active",
+    };
+    readFile.mockImplementation((filename) => {
+      if (filename === "users.json") return [...users, recruiter];
+      if (filename === "jobs.json") return [{ _id: "job-1", rewardCandidateUSD: 400 }];
+      if (filename === "referrals.json") {
+        return [
+          { recruiter: "recruiter-1", status: "hired", bonus: 300 },
+          { recruiter: "RECRUITER@example.com", status: "onboard", bonus: 0, job: "job-1" },
+          { recruiter: "recruiter-1", status: "rejected", bonus: 900 },
+        ];
+      }
+      return [];
+    });
+
+    const response = await request(app)
+      .get("/users")
+      .set("Authorization", `Bearer ${tokenFor("admin-1", "admin")}`)
+      .expect(200);
+
+    const result = response.body.data.find((user) => user._id === "recruiter-1");
+    expect(result.commissionEarned).toBe(300);
+    expect(result).not.toHaveProperty("password");
+  });
+
   test("creates users with a hashed password and rejects duplicate emails", async () => {
     const response = await request(app)
       .post("/users")

@@ -469,7 +469,8 @@ export async function removeReferralFieldsById(id) {
 }
 
 export async function createSubmissionL(payload) {
-  const parsedBonus = Number(String(payload.bonus ?? "").replace(/[^0-9.-]/g, ""));
+  const bonusMatch = String(payload.bonus ?? "").match(/[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?/);
+  const parsedBonus = bonusMatch ? Number(bonusMatch[0].replace(/,/g, "")) : 0;
   const res = await fetch(`${API_BASE}/local/referrals`, {
     method: "POST",
     headers: {
