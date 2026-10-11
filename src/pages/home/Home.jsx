@@ -50,7 +50,7 @@ export default function HomePage() {
       })
       .catch((err) => {
         console.error("[DEBUG] Error fetching jobs:", err);
-        setError("Không tải được danh sách công việc");
+        setError("Unable to load the job listings.");
       })
       .finally(() => mounted && setLoading(false));
     return () => {
@@ -101,7 +101,7 @@ export default function HomePage() {
       setJobs(list);
     } catch (err) {
       console.error("[DEBUG] Error searching jobs:", err);
-      setError("Không tải được danh sách công việc");
+      setError("Unable to load the job listings.");
     } finally {
       setLoading(false);
     }

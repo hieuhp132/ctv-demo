@@ -62,14 +62,14 @@ const updateUserStatus = async (req, res) => {
         // Chỉ chấp nhận các trạng thái hợp lệ
         const validStatuses = ["Pending", "Active", "Rejected"];
         if (!validStatuses.includes(newStatus)) {
-            return res.status(400).json({ success: false, message: "Trạng thái không hợp lệ" });
+hượp l            return res.status(400).json({ success: false, message: "Invalid status" });
         }
 
         const users = readFile("users.json");
         const userIndex = users.findIndex(u => u._id === userId);
 
         if (userIndex === -1) {
-            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng" });
+            return res.status(404).json({ success: false, message: "User not found" });
         }
 
         const targetUser = users[userIndex];
@@ -93,7 +93,7 @@ const updateUserStatus = async (req, res) => {
 
         res.json({
             success: true,
-            message: `Đã cập nhật trạng thái thành ${newStatus}`,
+            message: `Status updated to ${newStatus}`,
             user: {
                 email: users[userIndex].email,
                 status: users[userIndex].status
@@ -102,7 +102,7 @@ const updateUserStatus = async (req, res) => {
 
     } catch (err) {
         console.error("Update status error:", err);
-        res.status(500).json({ success: false, message: "Lỗi server" });
+        res.status(500).json({ success: false, message: "Server error" });
     }
 };
 
@@ -123,7 +123,7 @@ const getUserStatus = (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy user"
+        message: "User not found"
       });
     }
 
@@ -156,7 +156,7 @@ const getUserStatus = (req, res) => {
     console.error("getUserStatus error:", err);
     return res.status(500).json({
       success: false,
-      message: "Lỗi server"
+      message: "Server error"
     });
   }
 };
@@ -496,12 +496,12 @@ const registerLocalUser = (role, requireCompany = false) => async (req, res) => 
 
     res.json({
       success: true,
-      message: "Đăng ký thành công, chờ phê duyệt",
+      message: "Registration successful. Your account is pending approval.",
       user: safeUser,
     });
   } catch (err) {
     console.error("Recruiter registration error:", err);
-    res.status(500).json({ success: false, message: "Lỗi server" });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -531,7 +531,7 @@ const resetPassword = async (req, res) => {
     if (index === -1) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy người dùng",
+        message: "User not found",
       });
     }
 
@@ -543,14 +543,14 @@ const resetPassword = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Đặt lại mật khẩu thành công",
+      message: "Password reset successfully.",
     });
 
   } catch (err) {
     console.error("resetPassword error:", err);
     res.status(500).json({
       success: false,
-      message: "Lỗi server",
+      message: "Server error",
     });
   }
 };

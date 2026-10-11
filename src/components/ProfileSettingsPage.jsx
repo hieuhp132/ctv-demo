@@ -13,6 +13,7 @@ import {
   Shield,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { getRoleLabel } from "../routes/roleRoutes.js";
 import { useTheme } from "../context/ThemeContext.jsx";
 import Icons from "./Icons.jsx";
 import {
@@ -27,7 +28,7 @@ const createBankInfo = (bankInfo = {}) => ({
   branchName: "",
   accountNumber: "",
   ibanSwiftCode: "",
-  currency: "VNĐ",
+  currency: "VND",
   registeredEmail: "",
   registeredPhone: "",
   ethAddress: "",
@@ -288,7 +289,7 @@ export default function ProfileSettingsPage() {
                 <h2>{basicInfo.name || "Your profile"}</h2>
                 <p>{basicInfo.email || "Add an email address"}</p>
                 <span className="profile-role-badge">
-                  {basicInfo.role || "Member"}
+                  {getRoleLabel(basicInfo.role) || "Member"}
                 </span>
               </div>
             </div>

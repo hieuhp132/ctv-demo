@@ -30,6 +30,18 @@ export const ROLE_ROUTES = {
   },
 };
 
+export function getRoleLabel(role) {
+  const labels = {
+    admin: "Admin",
+    lower_admin: "Lower admin",
+    candidate: "Candidate",
+    recruiter: "Freelance Recruiter",
+    recruiter_freelancer: "Freelance Recruiter",
+    recruiter_fulltime: "Employee",
+  };
+  return labels[role] || role || "";
+}
+
 // Keep active sessions and links created before the role rename working.
 ROLE_ROUTES.recruiter = ROLE_ROUTES.recruiter_freelancer;
 

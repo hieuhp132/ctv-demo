@@ -73,6 +73,7 @@ export default function SubmitCandidateModal({
         jobId: job._id,
         recruiterId,
         ...form,
+        bonus: job.rewardCandidateUSD || job.bonus || 0,
         cvUrl: upload.publicUrl,
       });
 

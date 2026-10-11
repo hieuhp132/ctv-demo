@@ -13,34 +13,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useTheme } from "../../context/ThemeContext.jsx";
-import { ROLE_NAV_ITEMS, ROLE_ROUTES } from "../../routes/roleRoutes.js";
+import { getRoleLabel, ROLE_NAV_ITEMS, ROLE_ROUTES } from "../../routes/roleRoutes.js";
 import Notifications from "../../components/Notifications.jsx";
 import "./NavbarV1.css";
-
-const navItems = [
-  {
-    href: "#explore-jobs",
-    icon: "fa-palette",
-    tone: "cyan",
-    label: "Creative Jobs",
-  },
-  {
-    href: "#bounty-calculator",
-    icon: "fa-calculator",
-    tone: "pink",
-    label: "Bounty Calculator",
-  },
-  {
-    href: "#global-headhunter",
-    icon: "fa-globe",
-    tone: "green",
-    label: "Earn Bounty",
-  },
-  {
-    href: "#portfolio-showcase",
-    label: "Talent Pool",
-  },
-];
 
 function getRoleNavIcon(label) {
   if (/dashboard|statistics/i.test(label)) return LayoutDashboard;
@@ -60,6 +35,16 @@ export default function NavbarV1() {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+  const isFulltimePortal =
+    location.pathname.startsWith("/company") ||
+    location.pathname.startsWith("/employee") ||
+    location.pathname.includes("recruiter-fulltime");
+  const loginPath = isFulltimePortal
+    ? "/employee/login"
+    : "/recruiter/login";
+  const signupPath = isFulltimePortal
+    ? "/employee/signup"
+    : "/recruiter/signup";
   const roleItems = ROLE_NAV_ITEMS[user?.role] || [];
 
   useEffect(() => {
@@ -104,10 +89,14 @@ export default function NavbarV1() {
     (path !== dashboardPath && location.pathname.startsWith(`${path}/`));
 
   const handleLogout = () => {
+    const loggedOutLoginPath =
+      user?.role === "recruiter_fulltime"
+        ? "/employee/login"
+        : "/recruiter/login";
     logout();
     setAccountMenuOpen(false);
     closeMobileMenu();
-    navigate("/login");
+    navigate(loggedOutLoginPath);
   };
 
   return (
@@ -124,30 +113,23 @@ export default function NavbarV1() {
             </span>
             <span className="navbar-v1__tagline">
               {user?.role
-                ? `${user.role === "lower_admin" ? "Lower admin" : user.role === "recruiter_freelancer" ? "Freelance recruiter" : user.role === "recruiter_fulltime" ? "Employee" : user.role} workspace`
-                : "Headhunter • Creative UI/UX"}
+              ? `${getRoleLabel(user.role)} workspace`
+                : isFulltimePortal ? "Recruitment workspace" : "Recruiter network"}
             </span>
           </span>
         </a>
 
         {!user ? (
           <nav className="navbar-v1__links" aria-label="Main navigation">
-            {navItems.map(({ href, icon, tone, label }) => (
-              <a
-                className="navbar-v1__link"
-                href={href}
-                key={label}
-                onClick={closeMobileMenu}
-              >
-                {icon && (
-                  <i
-                    className={`fa-solid ${icon} navbar-v1__link-icon navbar-v1__link-icon--${tone}`}
-                    aria-hidden="true"
-                  />
-                )}
-                {label}
-              </a>
-            ))}
+            <Link className="navbar-v1__link" to="/freelancer" target="_blank" rel="noopener noreferrer">
+              <UsersRound size={15} /> Freelancer
+            </Link>
+            <Link className="navbar-v1__link" to="/company" target="_blank" rel="noopener noreferrer">
+              <BriefcaseBusiness size={15} /> Employee
+            </Link>
+            <Link className="navbar-v1__link" to="/" target="_blank" rel="noopener noreferrer">
+              Choose portal
+            </Link>
           </nav>
         ) : (
           <nav className="navbar-v1__role-links" aria-label="Workspace navigation">
@@ -170,13 +152,9 @@ export default function NavbarV1() {
         <div className="navbar-v1__actions">
           {!user && (
             <>
-              <button className="navbar-v1__referral" type="button">
-                <i className="fa-solid fa-coins" aria-hidden="true" />
-                <span>Refer &amp; Earn $1,500</span>
-              </button>
-              <button className="navbar-v1__portfolio" type="button">
-                Post Portfolio
-              </button>
+              <Link className="navbar-v1__portfolio" to={signupPath}>
+                {isFulltimePortal ? "Create account" : "Join the network"}
+              </Link>
             </>
           )}
           <button
@@ -252,12 +230,12 @@ export default function NavbarV1() {
             </div>
           ) : (
             <div className="navbar-v1__auth-links">
-              <a className="navbar-v1__login-link" href="/login">
-                Login
-              </a>
-              <a className="navbar-v1__signup-link" href="/signup">
-                Sign Up
-              </a>
+              <Link className="navbar-v1__login-link" to={loginPath}>
+                Log in
+              </Link>
+              <Link className="navbar-v1__signup-link" to={signupPath}>
+                Sign up
+              </Link>
             </div>
           )}
           <button
@@ -275,19 +253,6 @@ export default function NavbarV1() {
         </div>
       </div>
 
-      {!user && (
-        <div className="navbar-v1__quick-actions" aria-label="Quick actions">
-          <button className="navbar-v1__quick-action" type="button">
-            Ai Matcher
-          </button>
-          <button className="navbar-v1__quick-action" type="button">
-            Earn Money
-          </button>
-          <button className="navbar-v1__quick-action" type="button">
-            ANT TOKEN
-          </button>
-        </div>
-      )}
       {mobileMenuOpen && (
         <nav className="navbar-v1__mobile-menu" aria-label="Mobile navigation">
           {user ? (
@@ -303,26 +268,15 @@ export default function NavbarV1() {
             ))
           ) : (
             <>
-              {navItems.map(({ href, icon, tone, label }) => (
-                <a
-                  className="navbar-v1__link"
-                  href={href}
-                  key={label}
-                  onClick={closeMobileMenu}
-                >
-                  {icon && (
-                    <i
-                      className={`fa-solid ${icon} navbar-v1__link-icon navbar-v1__link-icon--${tone}`}
-                      aria-hidden="true"
-                    />
-                  )}
-                  {label}
-                </a>
-              ))}
-              <button className="navbar-v1__referral" type="button">
-                <i className="fa-solid fa-coins" aria-hidden="true" />
-                <span>Refer &amp; Earn $1,500</span>
-              </button>
+              <Link className="navbar-v1__link" to="/freelancer" target="_blank" rel="noopener noreferrer" onClick={closeMobileMenu}>
+                <UsersRound size={15} /> Freelancer
+              </Link>
+              <Link className="navbar-v1__link" to="/company" target="_blank" rel="noopener noreferrer" onClick={closeMobileMenu}>
+                <BriefcaseBusiness size={15} /> Employee
+              </Link>
+              <Link className="navbar-v1__link" to="/" target="_blank" rel="noopener noreferrer" onClick={closeMobileMenu}>
+                Choose portal
+              </Link>
             </>
           )}
           <button
@@ -356,7 +310,7 @@ export default function NavbarV1() {
                   </span>
                   <span>
                     <strong>{user.name || "Account"}</strong>
-                    <small>{user.role || user.email}</small>
+                    <small>{getRoleLabel(user.role) || user.email}</small>
                   </span>
                 </div>
                 {profilePath && (
@@ -367,12 +321,12 @@ export default function NavbarV1() {
             </>
           ) : (
             <div className="navbar-v1__mobile-auth">
-              <a className="navbar-v1__login-link" href="/login" onClick={closeMobileMenu}>
-                Login
-              </a>
-              <a className="navbar-v1__signup-link" href="/signup" onClick={closeMobileMenu}>
-                Sign Up
-              </a>
+              <Link className="navbar-v1__login-link" to={loginPath} onClick={closeMobileMenu}>
+                Log in
+              </Link>
+              <Link className="navbar-v1__signup-link" to={signupPath} onClick={closeMobileMenu}>
+                Sign up
+              </Link>
             </div>
           )}
         </nav>

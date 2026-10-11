@@ -429,7 +429,7 @@ export default function CandidateManagement() {
     try {
       const items = sorted.filter((r) => r.cvUrl);
       if (!items.length) {
-        alert("Không có CV để tải");
+        alert("There are no CVs to download.");
         return;
       }
       setZipping(true);
@@ -457,7 +457,7 @@ export default function CandidateManagement() {
         } catch { }
       }
       if (!added) {
-        alert("Không có CV hợp lệ để nén");
+        alert("There are no valid CVs to add to the ZIP file.");
         setZipping(false);
         return;
       }
@@ -484,14 +484,14 @@ export default function CandidateManagement() {
         } catch { }
       }
       if (!ok) {
-        alert("Không thể tải file ZIP");
+        alert("Unable to download the ZIP file.");
       }
       // mark all as downloaded
       markDownloaded(items);
       setZipProgress(100);
       setZipping(false);
     } catch (e) {
-      alert("Không thể tạo file ZIP");
+      alert("Unable to create the ZIP file.");
       setZipping(false);
     }
   };
@@ -500,7 +500,7 @@ export default function CandidateManagement() {
     try {
       const items = newCvItems;
       if (!items.length) {
-        alert("Không có CV mới");
+        alert("There are no new CVs.");
         return;
       }
       setZipping(true);
@@ -528,7 +528,7 @@ export default function CandidateManagement() {
         } catch { }
       }
       if (!added) {
-        alert("Không có CV hợp lệ để nén");
+        alert("There are no valid CVs to add to the ZIP file.");
         setZipping(false);
         return;
       }
@@ -553,7 +553,7 @@ export default function CandidateManagement() {
       setZipProgress(100);
       setZipping(false);
     } catch (e) {
-      alert("Không thể tạo file ZIP");
+      alert("Unable to create the ZIP file.");
       setZipping(false);
     }
   };

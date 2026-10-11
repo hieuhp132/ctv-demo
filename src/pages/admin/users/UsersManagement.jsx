@@ -16,6 +16,7 @@ import {
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { useAuth } from "../../../context/AuthContext.jsx";
+import { getRoleLabel } from "../../../routes/roleRoutes.js";
 import {
   createAdminUserL,
   deleteAdminUserL,
@@ -218,7 +219,7 @@ export default function UsersManagement() {
     const rows = filteredUsers.map((user) => ({
       Name: user.name || "",
       Email: user.email || "",
-      Role: user.role || "",
+      Role: getRoleLabel(user.role),
       Status: user.status || "",
       "Updated at": formatDate(getUpdatedDate(user)),
       "Bank account holder": user.bankInfo?.accountHolderName || "",

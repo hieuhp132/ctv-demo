@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { lregister } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import "../login/AuthPages.css";
 
 const SignUp = ({ recruiterType = "freelancer" }) => {
   const isFulltimeRecruiter = recruiterType === "fulltime";
@@ -34,27 +35,27 @@ const SignUp = ({ recruiterType = "freelancer" }) => {
     setError("");
 
     if (!name.trim()) {
-      setError("Please enter your name");
+      setError("Please enter your full name.");
       triggerShake();
       return;
     }
     if (isFulltimeRecruiter && !company.trim()) {
-      setError("Please enter your company name");
+      setError("Please enter your company name.");
       triggerShake();
       return;
     }
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("Please enter a valid email");
+      setError("Please enter a valid email address.");
       triggerShake();
       return;
     }
     if (!password || password.length < 6) {
-      setError("Password must be at least 6 characters");
+      setError("Your password must be at least 6 characters long.");
       triggerShake();
       return;
     }
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("Your passwords do not match.");
       triggerShake();
       return;
     }
@@ -75,50 +76,50 @@ const SignUp = ({ recruiterType = "freelancer" }) => {
       navigate("/pending");
       e.target.reset();
     } catch (err) {
-      setError(err.message || "Signup failed");
+      setError(err.message || "Unable to create your account.");
       triggerShake();
     }
     setIsSubmitting(false);
   };
 
   const onBackToLogin = () => {
-    navigate("/login");
+    navigate(isFulltimeRecruiter ? "/employee/login" : "/recruiter/login");
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 font-sans relative overflow-hidden">
+    <div className={`auth-page ${isFulltimeRecruiter ? "auth-page--fulltime" : "auth-page--freelancer"}`}>
       <ParticleBackground />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1, x: isShaking ? [-10, 10, -10, 10, 0] : 0 }}
         transition={{ x: { duration: 0.4 } }}
-        className="w-full max-w-[1000px] relative z-10 flex flex-col md:flex-row backdrop-blur-xl bg-white/10 border border-white/20 rounded-[40px] shadow-2xl overflow-hidden min-h-[600px]"
+        className="auth-card"
       >
         <button
-          onClick={() => navigate("/")}
-          className="absolute top-6 left-6 z-50 text-white/50 hover:text-white transition-colors flex items-center gap-2 text-sm font-medium"
+          onClick={() => navigate(isFulltimeRecruiter ? "/company" : "/freelancer")}
+          className="auth-home-link"
         >
           <ArrowLeft size={16} /> Home
         </button>
 
         {/* Left Side - Form */}
-        <div className="flex-1 p-8 md:p-12 lg:p-16 flex flex-col justify-center border-r border-white/10">
-          <div className="max-w-md w-full mx-auto">
-            <div className="mb-10">
+        <div className="auth-content">
+          <div className="auth-form-column">
+            <div className="auth-heading">
 
-              <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
-                {isFulltimeRecruiter ? "Join as an Employee" : "Create Account"}
+              <h1>
+                {isFulltimeRecruiter ? "Create an Employee Account" : "Create Account"}
               </h1>
 
-              <p className="text-white/60 text-sm">
+              <p>
                 {isFulltimeRecruiter
-                  ? "Create your employee workspace and manage recruitment end to end."
+                  ? "Create a workspace for your in-house hiring team."
                   : "Join AntTech ATS and start managing talent globally"}
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="auth-form">
               {error && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
@@ -131,8 +132,8 @@ const SignUp = ({ recruiterType = "freelancer" }) => {
 
               {/* Name */}
               <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold text-white/40 tracking-wider ml-1">
-                  Full Name
+                <label>
+                  Full name
                 </label>
 
                 <input
@@ -140,14 +141,14 @@ const SignUp = ({ recruiterType = "freelancer" }) => {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white outline-none"
-                  placeholder="John Doe"
+                  className="auth-input"
+                  placeholder="Alex Morgan"
                 />
               </div>
 
               {isFulltimeRecruiter && (
                 <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-white/40 tracking-wider ml-1">
+                  <label>
                     Company name
                   </label>
                   <input
@@ -155,15 +156,15 @@ const SignUp = ({ recruiterType = "freelancer" }) => {
                     required
                     value={company}
                     onChange={(event) => setCompany(event.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white outline-none"
-                    placeholder="Your organization"
+                    className="auth-input"
+                    placeholder="Your company"
                   />
                 </div>
               )}
 
               {/* Email */}
               <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold text-white/40 tracking-wider ml-1">
+                <label>
                   Email address
                 </label>
 
@@ -172,15 +173,15 @@ const SignUp = ({ recruiterType = "freelancer" }) => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white outline-none"
+                  className="auth-input"
                   placeholder="name@company.com"
                 />
               </div>
 
               {/* Passwords */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="auth-password-grid">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-white/40 tracking-wider ml-1">
+                  <label>
                     Password
                   </label>
 
@@ -192,7 +193,7 @@ const SignUp = ({ recruiterType = "freelancer" }) => {
                       onChange={(e) =>
                         setPassword(e.target.value)
                       }
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white outline-none"
+                      className="auth-input"
                       placeholder="••••••••"
                     />
 
@@ -201,7 +202,7 @@ const SignUp = ({ recruiterType = "freelancer" }) => {
                       onClick={() =>
                         setShowPassword(!showPassword)
                       }
-                      className="absolute right-5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                      className="auth-password-toggle"
                     >
                       {showPassword ? (
                         <EyeOff className="w-5 h-5" />
@@ -213,8 +214,8 @@ const SignUp = ({ recruiterType = "freelancer" }) => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-white/40 tracking-wider ml-1">
-                    Confirm Password
+                  <label>
+                    Confirm password
                   </label>
 
                   <input
@@ -224,7 +225,7 @@ const SignUp = ({ recruiterType = "freelancer" }) => {
                     onChange={(e) =>
                       setConfirmPassword(e.target.value)
                     }
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white outline-none"
+                    className="auth-input"
                     placeholder="••••••••"
                   />
                 </div>
@@ -232,15 +233,15 @@ const SignUp = ({ recruiterType = "freelancer" }) => {
 
               {/* Freelancer referral code */}
               {!isFulltimeRecruiter && <div className="space-y-1.5 mt-2">
-                <label className="text-[10px] uppercase font-bold text-white/40 tracking-wider ml-1">
-                  Promo Code (Optional)
+                <label>
+                  Referral code (optional)
                 </label>
 
                 <input
                   type="text"
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white outline-none"
+                  className="auth-input"
                   placeholder="Enter referral code"
                 />
               </div>}
@@ -249,34 +250,34 @@ const SignUp = ({ recruiterType = "freelancer" }) => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-4 rounded-2xl text-white font-bold text-sm uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] mt-4 bg-gradient-to-r from-[#FF465E] to-[#FFA63D] flex justify-center items-center"
+                className="auth-submit"
               >
                 {isSubmitting ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
-                  isFulltimeRecruiter ? "CREATE RECRUITER ACCOUNT" : "CREATE ACCOUNT"
+                  isFulltimeRecruiter ? "CREATE EMPLOYEE ACCOUNT" : "CREATE FREELANCE RECRUITER ACCOUNT"
                 )}
               </button>
             </form>
 
-            <div className="mt-8 pt-8 border-t border-white/10 text-center">
-              <p className="text-white/40 text-xs">
+            <div className="auth-switcher">
+              <p>
                 Already have an account?{" "}
                 <button
                   onClick={onBackToLogin}
-                  className="text-white font-medium hover:underline"
+                  className="auth-inline-link"
                 >
                   Log in
                 </button>
               </p>
-              <p className="text-white/40 text-xs mt-4">
-                {isFulltimeRecruiter ? "Joining as a freelancer? " : "Hiring for a company? "}
+              <p>
+                {isFulltimeRecruiter ? "Are you a freelance recruiter? " : "Are you an employee? "}
                 <button
-                  onClick={() => navigate(isFulltimeRecruiter ? "/signup" : "/signup/employee")}
-                  className="text-white font-medium hover:underline"
+                  onClick={() => navigate(isFulltimeRecruiter ? "/recruiter/signup" : "/employee/signup")}
+                  className="auth-inline-link"
                   type="button"
                 >
-                  {isFulltimeRecruiter ? "Register as recruiter freelancer" : "Register as employee"}
+                  {isFulltimeRecruiter ? "Join as a Freelance Recruiter" : "Join as an Employee"}
                 </button>
               </p>
             </div>
@@ -284,19 +285,19 @@ const SignUp = ({ recruiterType = "freelancer" }) => {
         </div>
 
         {/* Right Side */}
-        <div className="flex-1 relative hidden md:flex items-center justify-center bg-black/20 overflow-hidden">
+        <div className="auth-visual">
           <div className="absolute inset-0 z-0">
             <EarthObject />
           </div>
 
-          <div className="relative z-10 text-center p-12 pointer-events-none">
-            <h2 className="text-5xl font-bold text-white mb-4 opacity-80">
-              Join the Network
+          <div className="auth-visual-copy">
+            <h2>
+              {isFulltimeRecruiter ? "Your Hiring Workspace" : "Join the Network"}
             </h2>
 
-            <p className="text-white/40 text-lg max-w-xs mx-auto">
+            <p>
               {isFulltimeRecruiter
-                ? "Build your hiring pipeline, nurture talent and deliver better candidate experiences as an employee."
+                ? "Manage your pipeline, track candidates, and work with your hiring team."
                 : "Access a global pool of elite talent and streamline your hiring process."}
             </p>
           </div>

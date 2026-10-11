@@ -90,7 +90,7 @@ async function seed() {
       candidate: candidate._id,
       candidateName: candidate.name, // Add required candidateName field
       job: job1._id,
-      message: "Ứng viên này có kinh nghiệm React và rất phù hợp.",
+      message: "This candidate has React experience and looks like a great fit.",
       status: "submitted",
     });
 

@@ -409,6 +409,28 @@ export async function updateEmployeeReferralL(id, updates) {
   });
 }
 
+export async function getRecruiterDashboardStats() {
+  const response = await fetch(`${API_BASE}/api/metrics/recruiter-dashboard`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+    },
+  });
+  const responseText = await response.text();
+  let data;
+  try {
+    data = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    throw new Error(`Dashboard metrics returned an invalid response (HTTP ${response.status}).`);
+  }
+  if (!response.ok) throw new Error(data.message || "Failed to load dashboard metrics.");
+  const metricFields = ["referralCredits", "toReview", "confirmedAmount", "inProgressAmount"];
+  if (metricFields.some((field) => !Number.isFinite(data[field]) || data[field] < 0)) {
+    throw new Error("Dashboard metrics response is missing valid values.");
+  }
+  return data;
+}
+
 export async function fetchAdminReferrals(adminId, email) {
   return listReferrals({
     id: adminId || email,
@@ -447,12 +469,16 @@ export async function removeReferralFieldsById(id) {
 }
 
 export async function createSubmissionL(payload) {
+  const parsedBonus = Number(String(payload.bonus ?? "").replace(/[^0-9.-]/g, ""));
   const res = await fetch(`${API_BASE}/local/referrals`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      ...payload,
+      bonus: Number.isFinite(parsedBonus) ? parsedBonus : 0,
+    }),
   });
 
   if (!res.ok) {

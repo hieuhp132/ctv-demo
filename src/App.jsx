@@ -16,6 +16,8 @@ import Pending from "./pages/pending/Pending";
 import Login from "./pages/login/Login";
 import SignUp from "./pages/signup/SignUp";
 import NewHome from "./pages/home/NewHome";
+import HomePortalSelector from "./pages/home/HomePortalSelector";
+import EmployerHome from "./pages/home/EmployerHome";
 
 // ADMIN
 import AdJobsList from "./pages/admin/jobs/All";
@@ -42,9 +44,12 @@ import TermsPage from "./pages/terms/Terms";
 
 function PrivateRoute({ roles }) {
   const { user, authReady } = useAuth();
+  const loginPath = roles?.includes("recruiter_fulltime")
+    ? "/employee/login"
+    : "/recruiter/login";
 
   if (!authReady) return null;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to={loginPath} replace />;
   if (user.status !== "Active") return <Navigate to="/pending" replace />;
   if (roles && !roles.includes(user.role))
     return <Navigate to="/" replace />;
@@ -56,7 +61,7 @@ function DashboardRedirect() {
   const { user, authReady } = useAuth();
 
   if (!authReady) return null;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/recruiter/login" replace />;
   if (user.status !== "Active") return <Navigate to="/pending" replace />;
 
   return <Navigate to={ROLE_ROUTES[user.role]?.dashboard || ROLE_ROUTES[user.role]?.jobs || "/"} replace />;
@@ -82,16 +87,25 @@ function AppRoutes() {
     <Routes>
       <Route element={<Layout />}>
         {/* PUBLIC */}
-        <Route path="/" element={<NewHome />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/signup/employee" element={<SignUp recruiterType="fulltime" />} />
-        <Route path="/signup/recruiter-fulltime" element={<Navigate to="/signup/employee" replace />} />
+        <Route path="/" element={<HomePortalSelector />} />
+        <Route path="/freelancer" element={<NewHome />} />
+        <Route path="/company" element={<EmployerHome />} />
+        <Route path="/recruiter/login" element={<Login />} />
+        <Route path="/employee/login" element={<Login recruiterType="fulltime" />} />
+        <Route path="/recruiter/signup" element={<SignUp />} />
+        <Route path="/employee/signup" element={<SignUp recruiterType="fulltime" />} />
+        <Route path="/login" element={<Navigate to="/recruiter/login" replace />} />
+        <Route path="/login/recruiter-freelancer" element={<Navigate to="/recruiter/login" replace />} />
+        <Route path="/login/recruiter-fulltime" element={<Navigate to="/employee/login" replace />} />
+        <Route path="/signup" element={<Navigate to="/recruiter/signup" replace />} />
+        <Route path="/signup/recruiter-freelancer" element={<Navigate to="/recruiter/signup" replace />} />
+        <Route path="/signup/recruiter-fulltime" element={<Navigate to="/employee/signup" replace />} />
+        <Route path="/signup/employee" element={<Navigate to="/employee/signup" replace />} />
         <Route path="/pending" element={<Pending />} />
         <Route path="/dashboard" element={<DashboardRedirect />} />
         <Route path="/notifications/update" element={<Update />} />
         <Route path="/terms" element={<TermsPage />} />
-        <Route path="/frontend/update" element={<NewHome />} />
+        <Route path="/frontend/update" element={<HomePortalSelector />} />
 
         {/* ADMIN */}
         <Route element={<PrivateRoute roles={["admin", "lower_admin"]} />}>

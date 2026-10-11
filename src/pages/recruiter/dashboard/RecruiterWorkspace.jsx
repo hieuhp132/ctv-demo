@@ -20,15 +20,23 @@ const PIPELINE_STAGES = [
 const stageLabel = (status) =>
   String(status || "submitted").replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
-function getAmount(referral) {
-  const value =
-    referral?.bonus ??
-    referral?.commissionAmount ??
-    referral?.estimatedCommission ??
-    referral?.commission?.amount;
-  if (value === null || value === undefined || value === "" || value === "-") return null;
-  const amount = Number(String(value).replace(/[^0-9.-]/g, ""));
-  return Number.isFinite(amount) ? amount : null;
+function getAmount(referral, jobById = {}) {
+  const parseAmount = (value) => {
+    if (value === null || value === undefined || value === "" || value === "-") return null;
+    const amount = Number(String(value).replace(/[^0-9.-]/g, ""));
+    return Number.isFinite(amount) ? amount : null;
+  };
+  const referralAmount = parseAmount(
+    referral?.bonus ?? referral?.commissionAmount ?? referral?.estimatedCommission ?? referral?.commission?.amount
+  );
+  if (referralAmount > 0) return referralAmount;
+  const job = (referral?.job && typeof referral.job === "object"
+    ? referral.job
+    : jobById[String(referral?.jobId || referral?.job)]) || {};
+  const configuredAmounts = [job.rewardCandidateUSD, job.bonus]
+    .map(parseAmount)
+    .filter((amount) => amount !== null);
+  return configuredAmounts.find((amount) => amount > 0) ?? referralAmount ?? configuredAmounts[0] ?? null;
 }
 
 const formatCurrency = (amount) =>
@@ -112,6 +120,11 @@ export default function RecruiterWorkspace() {
     }).slice(0, 4);
   }, [jobs]);
 
+  const jobsById = useMemo(
+    () => Object.fromEntries(jobs.map((job) => [String(job._id || job.id), job])),
+    [jobs]
+  );
+
   const filteredReferrals = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return referrals.filter((referral) => {
@@ -124,26 +137,33 @@ export default function RecruiterWorkspace() {
   }, [referrals, query, statusFilter]);
 
   const metrics = useMemo(() => {
-    const finalized = referrals.filter((item) => ["hired", "onboard"].includes(String(item.status).toLowerCase()));
-    const pending = referrals.filter((item) => !["hired", "onboard", "rejected"].includes(String(item.status).toLowerCase()));
-    const knownTotal = (items) => items.reduce((total, item) => total + (getAmount(item) ?? 0), 0);
-    const knownCount = (items) => items.filter((item) => getAmount(item) !== null).length;
-    const successfulCount = finalized.length;
-    return {
-      earned: knownTotal(finalized),
-      earnedKnown: knownCount(finalized),
-      pending: knownTotal(pending),
-      pendingKnown: knownCount(pending),
-      total: referrals.length,
-      successRate: referrals.length ? Math.round((successfulCount / referrals.length) * 100) : 0,
-      stages: PIPELINE_STAGES.reduce((result, stage) => ({
-        ...result,
-        [stage]: referrals.filter((referral) => String(referral.status || "submitted").toLowerCase() === stage).length,
-      }), {}),
-    };
+    return PIPELINE_STAGES.reduce((result, stage) => ({
+      ...result,
+      [stage]: referrals.filter((referral) => String(referral.status || "submitted").toLowerCase() === stage).length,
+    }), {});
   }, [referrals]);
 
-  const commissionValue = (amount, count) => count ? formatCurrency(amount) : "—";
+  const commissionStats = useMemo(() => {
+    const confirmed = referrals.filter((referral) =>
+      ["hired", "onboard"].includes(String(referral.status || "").toLowerCase())
+    );
+    const inProgress = referrals.filter((referral) =>
+      ["submitted", "under_review", "interviewing", "offer"].includes(String(referral.status || "").toLowerCase())
+    );
+    const totalFor = (items) => items.reduce((total, referral) => {
+      const amount = getAmount(referral, jobsById);
+      return amount === null ? total : total + amount;
+    }, 0);
+
+    return {
+      confirmedCount: confirmed.filter((referral) => getAmount(referral, jobsById) !== null).length,
+      confirmedAmount: totalFor(confirmed),
+      inProgressCount: inProgress.filter((referral) => getAmount(referral, jobsById) !== null).length,
+      inProgressAmount: totalFor(inProgress),
+      placements: confirmed.length,
+      placementRate: referrals.length ? Math.round((confirmed.length / referrals.length) * 100) : 0,
+    };
+  }, [referrals, jobsById]);
 
   return (
     <main className="recruiter-workspace">
@@ -175,8 +195,10 @@ export default function RecruiterWorkspace() {
               <span className="recruiter-metric-card__tag">CONFIRMED</span>
             </div>
             <p>Commission earned</p>
-            <strong>{loading ? "…" : commissionValue(metrics.earned, metrics.earnedKnown)}</strong>
-            <span className="recruiter-metric-card__note">{metrics.earnedKnown} referral{metrics.earnedKnown === 1 ? "" : "s"} with commission data</span>
+            <strong>{loading ? "…" : commissionStats.confirmedCount ? formatCurrency(commissionStats.confirmedAmount) : "—"}</strong>
+            <span className="recruiter-metric-card__note">
+              {commissionStats.confirmedCount} {commissionStats.confirmedCount === 1 ? "referral" : "referrals"} with commission data
+            </span>
           </article>
           <article className="recruiter-metric-card recruiter-metric-card--violet" data-dashboard-card="interactive">
             <div className="recruiter-metric-card__top">
@@ -184,8 +206,10 @@ export default function RecruiterWorkspace() {
               <span className="recruiter-metric-card__tag">IN PROGRESS</span>
             </div>
             <p>Pipeline commission</p>
-            <strong>{loading ? "…" : commissionValue(metrics.pending, metrics.pendingKnown)}</strong>
-            <span className="recruiter-metric-card__note">{metrics.pendingKnown} referral{metrics.pendingKnown === 1 ? "" : "s"} with commission data</span>
+            <strong>{loading ? "…" : commissionStats.inProgressCount ? formatCurrency(commissionStats.inProgressAmount) : "—"}</strong>
+            <span className="recruiter-metric-card__note">
+              {commissionStats.inProgressCount} {commissionStats.inProgressCount === 1 ? "referral" : "referrals"} with commission data
+            </span>
           </article>
           <article className="recruiter-metric-card recruiter-metric-card--blue" data-dashboard-card="interactive">
             <div className="recruiter-metric-card__top">
@@ -193,7 +217,7 @@ export default function RecruiterWorkspace() {
               <span className="recruiter-metric-card__tag">ALL TIME</span>
             </div>
             <p>CVs referred</p>
-            <strong>{loading ? "…" : metrics.total}</strong>
+            <strong>{loading ? "…" : referrals.length}</strong>
             <span className="recruiter-metric-card__note">Candidates in your pipeline</span>
           </article>
           <article className="recruiter-metric-card recruiter-metric-card--green" data-dashboard-card="interactive">
@@ -202,8 +226,8 @@ export default function RecruiterWorkspace() {
               <span className="recruiter-metric-card__tag">PLACEMENT RATE</span>
             </div>
             <p>Successful placements</p>
-            <strong>{loading ? "…" : `${metrics.successRate}%`}</strong>
-            <span className="recruiter-metric-card__note">{metrics.stages.hired + metrics.stages.onboard} hired or onboarded</span>
+            <strong>{loading ? "…" : `${commissionStats.placementRate}%`}</strong>
+            <span className="recruiter-metric-card__note">{commissionStats.placements} hired or onboarded</span>
           </article>
         </section>
 
@@ -224,7 +248,7 @@ export default function RecruiterWorkspace() {
               <div className="recruiter-stage-count" key={stage} data-dashboard-card="interactive">
                 <span className={`recruiter-stage-dot recruiter-stage-dot--${stage}`} />
                 <span>{stageLabel(stage)}</span>
-                <strong>{loading ? "–" : metrics.stages[stage]}</strong>
+                <strong>{loading ? "–" : metrics[stage]}</strong>
               </div>
             ))}
           </div>
@@ -259,7 +283,7 @@ export default function RecruiterWorkspace() {
                   const candidateName = referral.candidateName || "Unnamed candidate";
                   const initials = candidateName.split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase();
                   const referralDate = referral.createdAt ? new Date(referral.createdAt) : null;
-                  const amount = getAmount(referral);
+                  const amount = getAmount(referral, jobsById);
                   return (
                     <tr key={referral._id || referral.id || `${candidateName}-${index}`}>
                       <td>

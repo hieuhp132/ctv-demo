@@ -23,6 +23,32 @@ const PAGE_SIZE = 10;
 const paginate = (data, page) =>
   data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+const getReferralCommission = (referral, jobMap) => {
+  const parseAmount = (value) => {
+    if (value === null || value === undefined || value === "" || value === "-") return null;
+    const amount = Number(String(value).replace(/[^0-9.-]/g, ""));
+    return Number.isFinite(amount) ? amount : null;
+  };
+  const referralAmount = parseAmount(referral.bonus);
+  if (referralAmount > 0) return referralAmount;
+
+  const jobId = typeof referral.job === "object" ? referral.job?._id : referral.job;
+  const job = (typeof referral.job === "object" ? referral.job : null) || jobMap[jobId] || {};
+  const configuredAmounts = [job.rewardCandidateUSD, job.bonus]
+    .map(parseAmount)
+    .filter((amount) => amount !== null);
+  return configuredAmounts.find((amount) => amount > 0) ?? referralAmount ?? configuredAmounts[0] ?? null;
+}
+
+const formatCommission = (amount) =>
+  amount === null
+    ? "-"
+    : new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 0,
+      }).format(amount);
+
 /* ================= AUTOCOMPLETE INPUT ================= */
 const AutocompleteInput = ({ label, placeholder, value, onChange, options }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -88,7 +114,9 @@ function CandidateTable({ title, rows, jobMap }) {
     rows.forEach(r => {
       if (r.candidateName) names.add(r.candidateName);
       if (r.candidateEmail) emails.add(r.candidateEmail);
-      if (r.job && jobMap[r.job]?.title) jobs.add(jobMap[r.job].title);
+      const jobId = typeof r.job === "object" ? r.job?._id : r.job;
+      const jobTitle = (typeof r.job === "object" ? r.job?.title : null) || jobMap[jobId]?.title;
+      if (jobTitle) jobs.add(jobTitle);
     });
     return {
       candidates: Array.from(names),
@@ -106,7 +134,9 @@ function CandidateTable({ title, rows, jobMap }) {
         .toLowerCase()
         .includes(appliedFilters.candidate.toLowerCase());
 
-      const matchJob = (jobMap[c.job]?.title || "")
+      const jobId = typeof c.job === "object" ? c.job?._id : c.job;
+      const jobTitle = (typeof c.job === "object" ? c.job?.title : null) || jobMap[jobId]?.title;
+      const matchJob = (jobTitle || "")
         .toLowerCase()
         .includes(appliedFilters.job.toLowerCase());
 
@@ -205,8 +235,8 @@ function CandidateTable({ title, rows, jobMap }) {
               {paged.map((c) => (
                 <tr key={c._id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-5 py-4 font-medium text-gray-900 w-fit break-words">{c.candidateName}</td>
-                  <td className="px-5 py-4 text-gray-600 w-fit break-words" title={jobMap[c.job]?.title}>{jobMap[c.job]?.title || "-"}</td>
-                  <td className="px-5 py-4 text-gray-600 font-semibold">{jobMap[c.job]?.salary || "-"}</td>
+                  <td className="px-5 py-4 text-gray-600 w-fit break-words" title={typeof c.job === "object" ? c.job?.title : jobMap[c.job]?.title}>{(typeof c.job === "object" ? c.job?.title : jobMap[c.job]?.title) || "-"}</td>
+                  <td className="px-5 py-4 text-gray-600 font-semibold">{(typeof c.job === "object" ? c.job?.salary : jobMap[c.job]?.salary) || "-"}</td>
                   <td className="px-5 py-4">
                     {c.status ? (
                       <span className={`px-2.5 py-1 rounded-full text-xs font-bold leading-none
@@ -222,7 +252,7 @@ function CandidateTable({ title, rows, jobMap }) {
                       "-"
                     )}
                   </td>
-                  <td className="px-5 py-4 text-gray-600 font-semibold">{c.bonus ?? "-"}</td>
+                  <td className="px-5 py-4 text-gray-600 font-semibold">{formatCommission(getReferralCommission(c, jobMap))}</td>
                   <td className="px-5 py-4 text-gray-600">{c.candidateEmail || "-"}</td>
                   <td className="px-5 py-4 text-gray-600">{c.candidatePhone || "-"}</td>
 
@@ -345,7 +375,9 @@ export default function MyCandidates() {
   /* ===== LOAD JOB INFO ===== */
   useEffect(() => {
     const all = [...candidates, ...archived];
-    const jobIds = [...new Set(all.map((c) => c.job).filter(Boolean))];
+    const jobIds = [...new Set(all.map((c) => (
+      typeof c.job === "object" ? c.job?._id : c.job
+    )).filter(Boolean))];
 
     if (!jobIds.length) return;
 
@@ -358,6 +390,8 @@ export default function MyCandidates() {
           {
             title: res?.job?.title || "-",
             salary: res?.job?.salary || "-",
+            bonus: res?.job?.bonus,
+            rewardCandidateUSD: res?.job?.rewardCandidateUSD,
           },
         ];
       })

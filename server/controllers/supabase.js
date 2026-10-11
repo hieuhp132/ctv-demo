@@ -154,7 +154,7 @@ exports.signup = async (req, res) => {
     try {
       const { email, name } = req.body;
       if (!email || !name) {
-        return res.status(400).json({ error: "Email và tên là bắt buộc" });
+        return res.status(400).json({ error: "Email and name are required" });
       }
       const result = await callSupabaseFunction('signup', { email, name });
       res.json({ success: true, data: result });
@@ -178,7 +178,7 @@ exports.forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
         if (!email) {
-            return res.status(400).json({ error: "Email là bắt buộc" });
+            return res.status(400).json({ error: "Email is required" });
         }
         const result = await callSupabaseFunction('resetPassword', { email, password });
         res.json({ success: true, data: result });
@@ -201,7 +201,7 @@ exports.updateStatus = async (req, res) => {
       const { email, status } = req.body;
   
       if (!email || !status) {
-        return res.status(400).json({ error: "Email và trạng thái là bắt buộc" });
+        return res.status(400).json({ error: "Email and status are required" });
       }
   
       // Gọi Supabase Edge Function (đã setup trong utils/supabaseClient.js)

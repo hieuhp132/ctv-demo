@@ -120,7 +120,7 @@ function JobCard({ job, index }) {
           >
             <Heart size={15} />
           </button>
-          <a href="/login" className="new-home__apply-button">
+          <a href="/recruiter/login" className="new-home__apply-button">
             Apply <ArrowRight size={13} />
           </a>
         </div>
@@ -334,7 +334,7 @@ export default function NewHome() {
                 <strong>{formatCurrency(referralReward)} {currency.startsWith("USDT") || currency === "USDC" ? currency.split(" ")[0] : "USD"}</strong>
                 <small>* Estimate based on the selected salary and bounty rate</small>
               </div>
-              <a href="/signup">Get your referral link <ArrowRight size={13} /></a>
+              <a href="/recruiter/signup">Get your referral link <ArrowRight size={13} /></a>
             </div>
           </div>
         </div>
@@ -407,7 +407,7 @@ export default function NewHome() {
                   <span>Engine &amp; Tech Stack</span>
                   <div><span>Unity</span><span>Unreal 5</span><span>C#</span><span>C++</span><span>Blender</span><span>3D</span></div>
                 </div>
-                <a className="new-home__portfolio-promo" href="/login">
+                <a className="new-home__portfolio-promo" href="/recruiter/login">
                   <Coins size={20} />
                   <strong>CV Review cho Game Dev</strong>
                   <span>Get a free CV and portfolio review from tech leads at top studios.</span>
@@ -477,7 +477,7 @@ export default function NewHome() {
           <span className="new-home__section-kicker"><Wallet size={13} /> Grow with Ant Tech</span>
           <h2>Connect great talent. Earn rewarding bounties.</h2>
           <p>Join our Headhunter Partner network and earn transparent rewards for every successful referral.</p>
-          <a href="/signup" className="new-home__primary-button">Become a Partner <ArrowRight size={15} /></a>
+          <a href="/recruiter/signup" className="new-home__primary-button">Become a Partner <ArrowRight size={15} /></a>
         </div>
         <Check aria-hidden="true" className="new-home__partner-check" />
       </section>
@@ -506,7 +506,7 @@ export default function NewHome() {
             <h2>For Partners</h2>
             <a href="#bounty-calculator">Bounty Calculator</a>
             <a href="#global-headhunter">Smart Contract Referrals</a>
-            <a href="/signup">Become a Global Scout</a>
+            <a href="/recruiter/signup">Become a Global Scout</a>
             <a href="#bounty-calculator">USDT Payout Policy</a>
           </nav>
 

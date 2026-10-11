@@ -200,7 +200,7 @@ exports.finalizeReferral = async (req, res) => {
     }
 
     // If status is Onboard, process payment
-    if (referral.status === "Onboard") {
+    if (String(referral.status).toLowerCase() === "onboard") {
       const bonusAmount = referral.bonus;
       if (bonusAmount > 0) {
         const admin = await User.findById(adminId);

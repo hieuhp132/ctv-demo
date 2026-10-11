@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { getRoleLabel } from "../../routes/roleRoutes.js";
 import "./Navbar.css";
 import logoImg from "/logo.jfif";
 import { MdNotifications } from "react-icons/md";
@@ -213,7 +214,7 @@ export default function Navbar() {
                   />
                   <div>
                     <div className="text-sm font-bold text-text-dark">{user.name}</div>
-                    <div className="text-xs text-text-light capitalize">{user.role}</div>
+                    <div className="text-xs text-text-light capitalize">{getRoleLabel(user.role)}</div>
                   </div>
                 </div>
                 {["admin", "lower_admin"].includes(user.role) && (
